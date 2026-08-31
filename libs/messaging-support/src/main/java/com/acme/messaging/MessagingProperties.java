@@ -96,6 +96,12 @@ public class MessagingProperties {
 
         private int minCompactionLagMinutes = 60;
 
+        private List<String> trustedPackages = new ArrayList<>();
+
+        private int maxDeliveryAttempts = 4;
+
+        private long retryBackoffMs = 1000;
+
         /**
          * Partitions for streams that do not demand global ordering.
          *
@@ -146,6 +152,55 @@ public class MessagingProperties {
 
         public void setMinCompactionLagMinutes(int minCompactionLagMinutes) {
             this.minCompactionLagMinutes = minCompactionLagMinutes;
+        }
+
+        /**
+         * Packages the consumer-side deserializer trusts to instantiate.
+         *
+         * <p>{@code JacksonJsonDeserializer} refuses to build a class outside this list, because a
+         * deserializer with no such limit will construct whatever class name an attacker puts in the
+         * message header - a deserialization gadget chain waiting to happen. Empty means "trust the
+         * packages already scanned for {@code @EventContract} types", which is the narrowest default
+         * that still works with no configuration: those are the only classes this service expects to
+         * receive.
+         *
+         * @return the packages to trust, possibly empty
+         */
+        public List<String> getTrustedPackages() {
+            return trustedPackages;
+        }
+
+        public void setTrustedPackages(List<String> trustedPackages) {
+            this.trustedPackages = trustedPackages;
+        }
+
+        /**
+         * Total delivery attempts - the first try plus retries - before a message is dead-lettered.
+         *
+         * <p>Bounded on purpose: a handler that retries forever stalls its partition, and every key
+         * behind the poison message queues up behind it.
+         *
+         * @return the maximum number of attempts
+         */
+        public int getMaxDeliveryAttempts() {
+            return maxDeliveryAttempts;
+        }
+
+        public void setMaxDeliveryAttempts(int maxDeliveryAttempts) {
+            this.maxDeliveryAttempts = maxDeliveryAttempts;
+        }
+
+        /**
+         * Fixed delay between redelivery attempts.
+         *
+         * @return the backoff, in milliseconds
+         */
+        public long getRetryBackoffMs() {
+            return retryBackoffMs;
+        }
+
+        public void setRetryBackoffMs(long retryBackoffMs) {
+            this.retryBackoffMs = retryBackoffMs;
         }
     }
 }

@@ -27,9 +27,22 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
     </dependency>
+    <!-- The starter, not the bare library. Boot 4.1 split Kafka's autoconfiguration into its own
+         module (spring-boot-kafka: KafkaTemplate, ProducerFactory, ConsumerFactory, @KafkaListener
+         processing). Depending on spring-kafka alone gives you the client classes with nothing
+         wiring them - KafkaEventPublisher's KafkaTemplate constructor argument would have no bean
+         to inject, and the application would fail to start. -->
     <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- spring-boot-starter alone does not pull in Jackson 3 databind - JSON support is its own
+         starter. JacksonJsonSerializer/JacksonJsonDeserializer need tools.jackson.databind.json
+         on the compile classpath, not just at runtime. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-json</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>

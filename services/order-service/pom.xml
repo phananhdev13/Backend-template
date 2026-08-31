@@ -38,9 +38,12 @@
       <artifactId>observability-support</artifactId>
     </dependency>
 
+    <!-- The starter brings spring-boot-kafka, the module that actually wires KafkaTemplate,
+         ProducerFactory, ConsumerFactory and @KafkaListener processing. spring-kafka alone is
+         just the client library with nothing to create those beans. -->
     <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka</artifactId>
     </dependency>
 
     <!-- Spring Modulith gives us two things: verification that feature packages do

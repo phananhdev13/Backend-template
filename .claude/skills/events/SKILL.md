@@ -87,21 +87,67 @@ See [P-072](../../../docs/principles/P-072-transactional-outbox.md).
 
 ## Consuming
 
+`@EventHandler` and `@Idempotent` state intent; they wire nothing by themselves. The class still
+needs a real `@KafkaListener` method, or nothing ever calls it - that gap is easy to miss because
+the class compiles and the architecture test passes either way. `messagingSupport` supplies the
+serializer, the dead-letter routing and a `ProcessedMessageStore` bean; this is the shape that uses
+them:
+
 ```java
 @EventHandler(consumes = OrderPlaced.class, group = "billing")
 @Idempotent(key = "orderId", note = "Invoice creation is an upsert keyed by order id")
 @InboundAdapter(AdapterKind.MESSAGING)
-public class OrderPlacedListener { }
+public class OrderPlacedListener {
+
+    private final ProcessedMessageStore processed;
+    private final CreateInvoiceUseCase createInvoice;   // an @InputPort, called like any other
+
+    OrderPlacedListener(ProcessedMessageStore processed, CreateInvoiceUseCase createInvoice) {
+        this.processed = processed;
+        this.createInvoice = createInvoice;
+    }
+
+    // The SpEL expression asks the contract for its own physical name rather than hard-coding a
+    // topic string, so a stream-prefix or version change needs no edit here. Split across two
+    // string-literal constants only to fit the repo's 120-column limit - @KafkaListener.topics
+    // needs a compile-time constant, and javac folds literal concatenation into one.
+    private static final String ORDER_PLACED_TOPIC_EXPRESSION = "#{@contractRegistry.byStream("
+            + "'orders.order-placed', 1).orElseThrow().physicalName('${acme.messaging.stream-prefix:}')}";
+
+    @KafkaListener(topics = ORDER_PLACED_TOPIC_EXPRESSION, groupId = "billing")
+    @Transactional
+    public void on(OrderPlaced event) {
+        // Mark-then-act, in one transaction: a rebalance after marking but before acting would
+        // otherwise lose the work, and acting-then-marking can double-charge on a crash between
+        // the two. See ProcessedMessageStore.markProcessed for why insert-and-catch, not read-then-write.
+        boolean firstDelivery = processed.markProcessed("billing", event.orderId(), Duration.ofDays(7));
+        if (firstDelivery) {
+            createInvoice.createInvoice(new CreateInvoiceCommand(event.orderId(), event.totalAmount()));
+        }
+    }
+}
 ```
 
 `@Idempotent` is mandatory on any handler of a stream that may redeliver
-(`EventContractRules.atLeastOnceHandlersAreIdempotent`). Deduplication in a store is a bound on
-storage, not a correctness argument - a replay can arrive months later. Where correctness must hold
-indefinitely, make the write itself idempotent: an upsert keyed by the business identifier, or a
-state transition that is a no-op from its own target state. Say which in `note`.
+(`EventContractRules.atLeastOnceHandlersAreIdempotent`) - but it is documentation, not enforcement;
+the `note` promises a specific mechanism, and the method body above is what actually keeps that
+promise. Deduplication in a store is a bound on storage, not a correctness argument - a replay can
+arrive months later. Where correctness must hold indefinitely, make the write itself idempotent: an
+upsert keyed by the business identifier, or a state transition that is a no-op from its own target
+state.
 
 Consumer groups: one group means the work is shared; different groups mean everyone gets every
 message. Getting this wrong is how one email is sent per instance.
+
+A message that fails to process retries with a fixed backoff and lands on `<topic>.dlq` after
+`acme.messaging.kafka.max-delivery-attempts` tries - configured once in `messagingSupport`, not per
+listener. See
+[references/broker-mapping.md](references/broker-mapping.md#failure-handling).
+
+For a complete, real listener rather than this illustration, read
+`services/agent-factory/.../adapter/in/messaging/AgentActivationAuditListener.java` - it consumes
+`AgentVersionActivated`, checks `ProcessedMessageStore` before writing an audit row, and is the
+class that proved this whole consuming section actually works rather than merely compiling.
 
 ## Changing a contract
 

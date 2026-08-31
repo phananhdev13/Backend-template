@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>backend-template</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>agent-factory</artifactId>
+
+  <name>agent-factory</name>
+  <description>Registers AI agent definitions and their versions: metadata, activation lifecycle,
+    and the event that tells the rest of the platform when a version goes live. The template's
+    second service, built to exercise every skill and rule against a domain other than orders.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>kernel</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>web-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>persistence-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>messaging-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>observability-support</artifactId>
+    </dependency>
+
+    <!-- The starter brings spring-boot-kafka, the module that actually wires KafkaTemplate,
+         ProducerFactory, ConsumerFactory and @KafkaListener processing. spring-kafka alone is
+         just the client library with nothing to create those beans. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka</artifactId>
+    </dependency>
+
+    <!-- Spring Modulith gives us two things: verification that feature packages do
+         not reach into each other's internals, and a transactional event
+         publication registry - a supported outbox, rather than one we maintain. -->
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-starter-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-starter-jdbc</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>arch-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-configuration-processor</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

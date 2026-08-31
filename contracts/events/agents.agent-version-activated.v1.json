@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.acme.example/events/agents.agent-version-activated.v1.json",
+  "title": "AgentVersionActivated",
+  "description": "A specific version of an agent became the active one. A fact: it states a transition, not the agent's current configuration.",
+  "x-contract": {
+    "stream": "agents.agent-version-activated",
+    "version": 1,
+    "partitionKey": "agentId",
+    "payload": "FACT",
+    "retention": "TIME_WINDOW",
+    "retentionDays": 90,
+    "delivery": "AT_LEAST_ONCE",
+    "ordering": "PER_KEY",
+    "containsPersonalData": false
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["agentId", "version", "occurredAt"],
+  "properties": {
+    "agentId": {
+      "type": "string",
+      "description": "Partition key. Stable for the life of the agent."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The version number that became active. Consumers wanting its configuration call back into agent-factory; this event only states that a transition happened."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the activation happened in the domain, not when it was published."
+    }
+  }
+}

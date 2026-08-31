@@ -62,6 +62,29 @@ Retries are bounded and end in a dead-letter destination named `<physical-name>.
 that retries forever is a consumer that has stopped: the partition stops advancing and every key
 behind the poison message stalls with it.
 
+This is wired once, for every `@KafkaListener` in the service, by `MessagingSupportAutoConfiguration`
+- not per listener. It registers a `DefaultErrorHandler` backed by a `DeadLetterPublishingRecoverer`,
+with a `FixedBackOff` built from two properties:
+
+```yaml
+acme:
+  messaging:
+    kafka:
+      max-delivery-attempts: 4   # first try plus three retries
+      retry-backoff-ms: 1000
+```
+
+Boot's `ConcurrentKafkaListenerContainerFactoryConfigurer` applies whichever `CommonErrorHandler`
+bean is present to every listener container it builds, which is why declaring the bean once in
+`messaging-support` is enough - no listener method configures its own retry policy.
+
+A message that fails to **deserialise** - the wrong schema, a class outside
+`acme.messaging.kafka.trusted-packages`, truncated bytes - is not a handler exception and would
+otherwise kill the consumer thread outright before the error handler ever runs. The consumer
+factory wraps its `JacksonJsonDeserializer` in `ErrorHandlingDeserializer` so that failure surfaces
+as a normal `DeserializationException` instead, and goes through the same retry-then-dead-letter
+path as any other failure.
+
 Configure the backoff to be longer than a plausible dependency blip and shorter than a page.
 Something has to read the dead-letter destination; a DLQ nobody monitors is a delete with extra
 steps.

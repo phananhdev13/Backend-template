@@ -19,7 +19,9 @@ AGENTS.md              the entry point — a table of contents, not a manual
 libs/kernel            the annotations. No framework dependencies, ever.
 libs/arch-test         the ArchUnit rules that make the annotations load-bearing
 libs/*-support         web, persistence, messaging, observability
-services/order-service the worked example every rule was validated against
+services/order-service the first worked example: REST, JPA, the transactional outbox
+services/agent-factory a second service, adding the one thing order-service does not
+                        need - a real @KafkaListener consumer with idempotency and a DLQ
 docs/                  principles, decisions, guides, specifications
 tools/                 the checks that cannot live in Maven
 ```

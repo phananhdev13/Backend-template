@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: agent-factory
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/agent_factory}
+    username: ${DB_USER:agent_factory}
+    password: ${DB_PASSWORD:agent_factory}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    # messaging-support ships the processed_message table under its own path; every service that
+    # consumes events adds it alongside its own migrations.
+    locations: classpath:db/migration,classpath:db/migration/messaging
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: true
+      republish-outstanding-events-on-restart: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 30000
+        max.block.ms: 5000
+  mvc:
+    apiversion:
+      default: 1
+      use:
+        header: X-API-Version
+
+acme:
+  messaging:
+    stream-prefix: ${STREAM_PREFIX:acme}
+    base-packages:
+      - com.acme.agentfactory
+    auto-provision: true
+    kafka:
+      max-delivery-attempts: 4
+      retry-backoff-ms: 1000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+
+logging:
+  level:
+    com.acme: INFO

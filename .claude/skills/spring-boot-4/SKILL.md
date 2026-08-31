@@ -23,10 +23,24 @@ probably removed rather than moved.
 | `org.testcontainers:postgresql` | `org.testcontainers:testcontainers-postgresql` | Testcontainers **2.x** renamed every module |
 | `spring-retry` | core `org.springframework.resilience` | Dependency management removed from the BOM |
 | anything `org.springframework.cloud` | see [ADR-0004](../../../docs/adr/0004-do-not-adopt-spring-cloud.md) | Current train targets Boot **4.0**, not 4.1 |
+| `org.springframework.kafka:spring-kafka` alone | `org.springframework.boot:spring-boot-starter-kafka` | The bare library has no `KafkaTemplate`, `ProducerFactory` or `@KafkaListener` processing - see below |
 
 Boot 4 split the old monolithic autoconfigure module. The convention is now module
 `spring-boot-<tech>`, package `org.springframework.boot.<tech>`, starter
 `spring-boot-starter-<tech>`.
+
+**This bit us once already in this repo.** `messaging-support`, `order-service` and `agent-factory`
+all originally depended on the bare `spring-kafka` library. It compiled cleanly and every unit test
+passed, because nothing in a unit test starts a Spring context. The application itself would have
+failed at startup with `UnsatisfiedDependencyException: No qualifying bean of type 'KafkaTemplate'`
+- Kafka's autoconfiguration lives in its own module, `org.springframework.boot:spring-boot-kafka`
+(classes under `org.springframework.boot.kafka.autoconfigure`), and only the **starter** pulls it in.
+The lesson generalises: a dependency on the raw client library compiles against Boot's split
+technology modules exactly like it would against the pre-split ones, but supplies none of the beans
+that autoconfiguration would have created. If a class needs a bean Boot "usually just provides",
+check which starter actually ships the autoconfiguration - not just the client jar - and prove it
+with a context-loading test (`ApplicationContextRunner`), not only a unit test of the class in
+isolation. See `MessagingSupportAutoConfigurationTest` for the pattern.
 
 ## Libraries whose major version changed
 

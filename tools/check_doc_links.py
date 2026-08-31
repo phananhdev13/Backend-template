@@ -11,6 +11,12 @@ REFERENCE = re.compile(
 SCANNED_SUFFIXES = (".java", ".md", ".xml", ".sh", ".yml", ".yaml", ".py")
 SKIPPED_DIRS = {"target", ".git", ".idea", "node_modules"}
 SKIPPED_FILES = {".flattened-pom.xml"}
+# A test fixture's job is to be a plausible, throwaway example, not a real published contract - an
+# @EventContract in src/test/java/**/fixture/ names a schema path so the annotation compiles, not
+# because a consumer will ever generate from it. Requiring a real file there would mean creating
+# schema JSON with no reader just to satisfy this check, which is exactly the "looks checked but
+# is not" failure this checker exists to catch everywhere else.
+FIXTURE_PATH = re.compile(r"[\\/]src[\\/]test[\\/].*[\\/]fixtures?[\\/]")
 
 
 def references_in(path: str) -> list[tuple[int, str]]:
@@ -62,6 +68,8 @@ def main() -> int:
             if not name.endswith(SCANNED_SUFFIXES) or name in SKIPPED_FILES:
                 continue
             path = os.path.join(root, name)
+            if FIXTURE_PATH.search(path):
+                continue
             for number, target in references_in(path):
                 if not os.path.exists(target):
                     broken.append(f"{path}:{number} -> {target}")

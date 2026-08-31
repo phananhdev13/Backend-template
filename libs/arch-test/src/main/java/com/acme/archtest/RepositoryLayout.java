@@ -2,6 +2,7 @@ package com.acme.archtest;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * Locates the repository root from inside a module's test run.
@@ -44,7 +45,12 @@ public final class RepositoryLayout {
             return false;
         }
         try (var entries = Files.list(dir)) {
-            return entries.map(path -> path.getFileName().toString())
+            // Path.getFileName() is declared to return null for a zero-element path (a root),
+            // which a listing of a real directory's entries never produces - but the type says
+            // otherwise, and SpotBugs is right to ask for the check.
+            return entries.map(Path::getFileName)
+                    .filter(Objects::nonNull)
+                    .map(Path::toString)
                     .anyMatch(name -> name.startsWith(idPrefix) && name.endsWith(".md"));
         } catch (java.io.IOException e) {
             throw new IllegalStateException("Could not read " + dir, e);

@@ -26,6 +26,7 @@
     <module>libs/messaging-support</module>
     <module>libs/observability-support</module>
     <module>services/order-service</module>
+    <module>services/agent-factory</module>
   </modules>
 
   <properties>

@@ -3,6 +3,27 @@
   "version": 1,
   "codes": [
     {
+      "code": "agent-version.no-capability",
+      "kind": "BUSINESS_RULE",
+      "status": 422,
+      "meaning": "A version was registered or added with a blank system prompt and no tools, so it could not do anything once activated.",
+      "since": "0.1.0"
+    },
+    {
+      "code": "agent-version.not-found",
+      "kind": "NOT_FOUND",
+      "status": 404,
+      "meaning": "The named version does not exist on this agent.",
+      "since": "0.1.0"
+    },
+    {
+      "code": "agent.name-taken",
+      "kind": "CONFLICT",
+      "status": 409,
+      "meaning": "An agent name is already registered. Names are how humans and dashboards find an agent, so two agents cannot share one.",
+      "since": "0.1.0"
+    },
+    {
       "code": "order.already-cancelled",
       "kind": "BUSINESS_RULE",
       "status": 422,
