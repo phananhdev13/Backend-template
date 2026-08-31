@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>backend-template</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>kernel</artifactId>
+
+  <name>kernel</name>
+  <description>The vocabulary of this codebase: the annotations that name a class's
+    architectural role, and the handful of types every layer is allowed to share.
+
+    This module has NO framework dependencies and never will. Domain code depends
+    on it, and domain code must stay runnable without a Spring context. The
+    ArchUnit rule KernelStaysFrameworkFree enforces this.</description>
+</project>

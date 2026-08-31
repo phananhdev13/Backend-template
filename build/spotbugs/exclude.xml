@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Spring injects into fields and constructors in ways SpotBugs reads as
+       exposed mutable state. These are framework idioms, not defects. -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+
+  <!-- Records with array or collection components trip the same analysis. -->
+  <Match>
+    <Bug pattern="EQ_UNUSUAL"/>
+    <Source name="~.*Record\.java"/>
+  </Match>
+
+  <Match>
+    <Source name="~.*[\\/]src[\\/]test[\\/].*"/>
+  </Match>
+</FindBugsFilter>

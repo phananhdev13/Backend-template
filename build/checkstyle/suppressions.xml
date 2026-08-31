@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+  <!-- Tests describe scenarios; long descriptive method names are the point. -->
+  <suppress checks="MethodName" files="[\\/]src[\\/]test[\\/]java[\\/]"/>
+  <suppress checks="MagicNumber" files="[\\/]src[\\/]test[\\/]java[\\/]"/>
+  <suppress checks="JavadocType" files="[\\/]src[\\/]test[\\/]java[\\/]"/>
+
+  <!-- ArchUnit requires its rules to be static final fields, and names them in its own
+       output. They read as sentences - `dependenciesPointInwards` - not as constants,
+       and SCREAMING_SNAKE would make the failure reports worse. This is the only place
+       camelCase static finals are allowed. -->
+  <suppress checks="ConstantName" files="[\\/]arch-test[\\/]src[\\/]main[\\/]java[\\/]"/>
+  <suppress checks="ConstantName" files=".*ArchitectureTest\.java$"/>
+  <!-- An ArchUnit test class holds only static rule fields, which checkstyle reads as a utility
+       class. It is a test class; the JUnit engine never constructs it, and adding a private
+       constructor to satisfy the check would only make it look stranger. -->
+  <suppress checks="HideUtilityClassConstructor" files=".*ArchitectureTest\.java$"/>
+  <suppress checks="ConstantName" files=".*ArchRules\.java$"/>
+
+  <!-- Generated sources are not ours to style. -->
+  <suppress checks="[a-zA-Z0-9]*" files="[\\/]generated-sources[\\/]"/>
+  <suppress checks="[a-zA-Z0-9]*" files="[\\/]generated-test-sources[\\/]"/>
+</suppressions>

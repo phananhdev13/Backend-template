@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  Division of labour between the static analysis tools in this repo:
+
+    spotless (palantir-java-format) ... owns FORMAT      - whitespace, wrapping, import order
+    checkstyle (this file) ........... owns SEMANTICS    - naming, banned APIs, complexity
+    spotbugs ......................... owns BYTECODE     - likely defects
+    ArchUnit (libs/arch-test) ........ owns ARCHITECTURE - layering, annotations, contracts
+
+  Do not add formatting rules here. They will fight the formatter, and the
+  formatter will win on every save.
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <module name="SuppressionFilter">
+    <property name="file" value="${config_loc}/suppressions.xml"/>
+    <property name="optional" value="false"/>
+  </module>
+
+  <module name="FileTabCharacter">
+    <property name="eachLine" value="true"/>
+  </module>
+
+  <module name="NewlineAtEndOfFile">
+    <property name="lineSeparator" value="lf"/>
+  </module>
+
+  <module name="LineLength">
+    <property name="max" value="120"/>
+    <property name="ignorePattern" value="^package.*|^import.*|^ *\* *https?://.*"/>
+  </module>
+
+  <!-- Banned APIs. Each of these has a supported replacement in this codebase. -->
+  <module name="RegexpSingleline">
+    <property name="format" value="System\.(out|err)\.print"/>
+    <property name="message"
+              value="Use SLF4J. Console output is invisible to the log pipeline. See docs/principles/P-060-observability.md"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="format" value="\.printStackTrace\(\)"/>
+    <property name="message"
+              value="Log the exception with context instead: log.error(&quot;...&quot;, ex). See docs/principles/P-050-error-handling.md"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="format" value="^\s*//\s*FIXME"/>
+    <property name="message"
+              value="FIXME is not a tracking system. Open an entry in docs/exec-plans/tech-debt-tracker.md and reference it."/>
+  </module>
+
+  <module name="TreeWalker">
+    <module name="SuppressWarningsHolder"/>
+
+    <!-- Naming -->
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+    </module>
+    <module name="TypeName"/>
+    <module name="MethodName"/>
+    <module name="MemberName"/>
+    <module name="ParameterName"/>
+    <module name="LocalVariableName"/>
+    <module name="ConstantName">
+      <!-- `log` is mandated by ObservabilityRules.loggersAreConstants and is universal in SLF4J
+           codebases. Without this exemption the two rules contradict each other, and the loser
+           would be the one that actually matters at 3am. -->
+      <property name="format" value="^([A-Z][A-Z0-9]*(_[A-Z0-9]+)*|log)$"/>
+    </module>
+    <module name="StaticVariableName"/>
+
+    <!-- Imports -->
+    <module name="AvoidStarImport"/>
+    <module name="UnusedImports">
+      <property name="processJavadoc" value="true"/>
+    </module>
+    <module name="RedundantImport"/>
+    <module name="IllegalImport">
+      <property name="illegalPkgs" value="sun, com.sun, java.util.logging, org.apache.commons.lang, junit.framework"/>
+      <property name="illegalClasses"
+                value="org.junit.Assert, org.junit.jupiter.api.Assertions, java.util.Date, java.sql.Date, java.util.Calendar"/>
+      <message key="import.illegal"
+               value="Banned import ''{0}''. Use java.time for dates, SLF4J for logging, AssertJ for assertions. See docs/reference/banned-apis.md"/>
+    </module>
+
+    <!-- Design -->
+    <module name="OneTopLevelClass"/>
+    <module name="OuterTypeFilename"/>
+    <module name="FinalClass"/>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="InterfaceIsType"/>
+    <module name="MutableException"/>
+    <module name="VisibilityModifier">
+      <property name="protectedAllowed" value="true"/>
+      <property name="allowPublicFinalFields" value="true"/>
+    </module>
+
+    <!-- Coding -->
+    <module name="EqualsHashCode"/>
+    <module name="CovariantEquals"/>
+    <module name="StringLiteralEquality"/>
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+    <module name="DefaultComesLast"/>
+    <module name="FallThrough"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="NestedTryDepth">
+      <property name="max" value="1"/>
+    </module>
+    <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
+    <module name="UnnecessarySemicolonInEnumeration"/>
+    <module name="EmptyStatement"/>
+    <module name="IllegalCatch">
+      <property name="illegalClassNames" value="java.lang.Throwable, java.lang.Error"/>
+      <message key="illegal.catch"
+               value="Catching ''{0}'' hides JVM failures. Catch the exception you can actually handle. See docs/principles/P-050-error-handling.md"/>
+    </module>
+    <module name="IllegalThrows"/>
+
+    <!-- Complexity budgets. A method past these limits is a use case in disguise;
+         split it before the reviewer has to. -->
+    <module name="CyclomaticComplexity">
+      <property name="max" value="12"/>
+    </module>
+    <module name="MethodLength">
+      <property name="max" value="80"/>
+      <property name="countEmpty" value="false"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="max" value="8"/>
+      <property name="ignoreOverriddenMethods" value="true"/>
+    </module>
+
+    <!-- Misc -->
+    <module name="ArrayTypeStyle"/>
+    <module name="UpperEll"/>
+    <module name="ModifierOrder"/>
+    <module name="RedundantModifier"/>
+    <module name="NeedBraces"/>
+  </module>
+</module>

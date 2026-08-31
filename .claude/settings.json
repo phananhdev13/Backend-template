@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/tools/hooks/java-guardrails.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(mvn -B -ntp *)",
+      "Bash(mvn verify*)",
+      "Bash(mvn test*)",
+      "Bash(mvn compile*)",
+      "Bash(mvn spotless:apply*)",
+      "Bash(mvn spotless:check*)",
+      "Bash(mvn dependency:tree*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(tools/*)",
+      "Read(//home/user/Backend-template/**)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(mvn deploy*)",
+      "Bash(mvn release:*)"
+    ],
+    "deny": [
+      "Read(./**/*.env)",
+      "Read(./**/application-local.yml)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.jks)"
+    ]
+  }
+}

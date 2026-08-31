@@ -1,0 +1,29 @@
+target/
+.flattened-pom.xml
+*.class
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# Local overrides
+*.local
+application-local.yml
+application-local.yaml
+application-local.properties
+.env
+.env.*
+
+# Build / analysis output
+build/reports/
+**/generated-sources/
+**/generated-test-sources/

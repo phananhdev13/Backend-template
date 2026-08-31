@@ -1,0 +1,34 @@
+{
+  "$comment": "Domain error codes are API surface. A client branches on the problem response's `type` URI, which is derived from the code, so renaming one breaks clients exactly as renaming a JSON field would - and just as invisibly. tools/check-error-codes.sh diffs this file against the codes actually raised, so a rename has to be a deliberate, reviewed change.",
+  "version": 1,
+  "codes": [
+    {
+      "code": "order.already-cancelled",
+      "kind": "BUSINESS_RULE",
+      "status": 422,
+      "meaning": "The order was already cancelled. Refused rather than ignored, so a caller can tell a duplicate request from the first one.",
+      "since": "0.1.0"
+    },
+    {
+      "code": "order.mixed-currencies",
+      "kind": "BUSINESS_RULE",
+      "status": 422,
+      "meaning": "Lines on one order were priced in different currencies. Refused rather than converted: an implicit conversion at an unstated rate is a financial defect.",
+      "since": "0.1.0"
+    },
+    {
+      "code": "order.no-lines",
+      "kind": "BUSINESS_RULE",
+      "status": 422,
+      "meaning": "An order was submitted with no lines. An empty order is refused, not stored as a draft.",
+      "since": "0.1.0"
+    },
+    {
+      "code": "validation.failed",
+      "kind": "VALIDATION",
+      "status": 400,
+      "meaning": "The request was malformed. The problem response carries an `errors` array of field/problem pairs. Retrying unchanged will fail the same way.",
+      "since": "0.1.0"
+    }
+  ]
+}

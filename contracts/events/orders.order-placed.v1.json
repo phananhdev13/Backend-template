@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.acme.example/events/orders.order-placed.v1.json",
+  "title": "OrderPlaced",
+  "description": "A customer placed an order. A fact: it does not become untrue, and it is never compacted away.",
+  "x-contract": {
+    "stream": "orders.order-placed",
+    "version": 1,
+    "partitionKey": "orderId",
+    "payload": "FACT",
+    "retention": "TIME_WINDOW",
+    "retentionDays": 30,
+    "delivery": "AT_LEAST_ONCE",
+    "ordering": "PER_KEY",
+    "containsPersonalData": false
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["orderId", "customerId", "totalAmount", "currency", "occurredAt"],
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "description": "Partition key. Stable for the life of the order, which is what makes per-key ordering meaningful."
+    },
+    "customerId": { "type": "string" },
+    "totalAmount": {
+      "type": "string",
+      "description": "Decimal as a string. A JSON number would be parsed as a double by some consumers and lose cents."
+    },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the fact became true in the domain, not when it was published."
+    }
+  }
+}

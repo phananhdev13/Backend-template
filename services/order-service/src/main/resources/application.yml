@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/orders}
+    username: ${DB_USER:orders}
+    password: ${DB_PASSWORD:orders}
+  jpa:
+    # Flyway owns the schema. `validate` makes a drift between the entities and the
+    # migrations fail at startup rather than at the first query that hits the missing column.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: true
+      republish-outstanding-events-on-restart: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      # acks=all with an idempotent producer is what AT_LEAST_ONCE actually costs.
+      acks: all
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 30000
+        max.block.ms: 5000
+  mvc:
+    apiversion:
+      default: 1
+      use:
+        header: X-API-Version
+
+acme:
+  messaging:
+    stream-prefix: ${STREAM_PREFIX:acme}
+    base-packages:
+      - com.acme.order
+    auto-provision: true
+  ordering:
+    discount-threshold: "500.00"
+    discount-rate: "0.05"
+    currency: EUR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+
+logging:
+  level:
+    com.acme: INFO
