@@ -54,7 +54,7 @@ def main() -> int:
         print(f"\n{len(problems)} error code(s) drifted from the registry.")
         print("See docs/principles/P-050-error-handling.md")
         return 1
-    print(f"Checked {len(registered)} error code(s) against {REGISTRY}: in step.")
+    print(f"Checked {len(registered)} error code(s) against {REGISTRY}: no drift.")
     return 0
 
 
