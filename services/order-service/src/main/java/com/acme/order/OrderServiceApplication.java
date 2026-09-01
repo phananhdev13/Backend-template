@@ -1,6 +1,5 @@
 package com.acme.order;
 
-import com.acme.kernel.arch.Command;
 import com.acme.kernel.arch.InboundAdapter;
 import com.acme.kernel.arch.OutboundAdapter;
 import com.acme.kernel.arch.ReadModel;
@@ -21,6 +20,11 @@ import org.springframework.modulith.Modulith;
  * Spring dependency and never will. They are therefore not stereotypes, and Spring would not find
  * them. The include filter below is what makes them beans - the cost of keeping the domain and
  * application layers importable without a framework on the classpath, paid once, here.
+ *
+ * <p>{@code @Command} is deliberately absent from this list: a command is a plain data record
+ * passed as a method argument, never instantiated by Spring, and including it here made every
+ * command a bean-definition candidate with no bean of its own field types to satisfy - a
+ * constructor of {@code String}/{@code int} parameters has nothing for the container to inject.
  */
 @Modulith(systemName = "order-service")
 @SpringBootApplication
@@ -28,13 +32,7 @@ import org.springframework.modulith.Modulith;
         includeFilters =
                 @ComponentScan.Filter(
                         type = FilterType.ANNOTATION,
-                        classes = {
-                            UseCase.class,
-                            ReadModel.class,
-                            OutboundAdapter.class,
-                            InboundAdapter.class,
-                            Command.class
-                        }))
+                        classes = {UseCase.class, ReadModel.class, OutboundAdapter.class, InboundAdapter.class}))
 public class OrderServiceApplication {
 
     public static void main(String[] args) {

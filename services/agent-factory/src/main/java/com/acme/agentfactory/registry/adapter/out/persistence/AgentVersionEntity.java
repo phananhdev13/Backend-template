@@ -4,8 +4,6 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,7 +40,9 @@ public class AgentVersionEntity {
     @Column(name = "tool_name", nullable = false, length = 200)
     private Set<String> tools = new HashSet<>();
 
-    @Enumerated(EnumType.STRING)
+    // Stored and read as a plain string; JpaAgentRepositoryAdapter converts to and from
+    // AgentVersionStatus at the boundary. @Enumerated is for a Java enum-typed field, which this
+    // deliberately is not - see the class Javadoc on why the entity stays framework-simple.
     @Column(name = "status", nullable = false, length = 32)
     private String status;
 
@@ -96,5 +96,10 @@ public class AgentVersionEntity {
 
     Instant createdAt() {
         return createdAt;
+    }
+
+    /** Updates this managed child's status in place - see {@code AgentEntity.applyState}. */
+    void applyState(String status) {
+        this.status = status;
     }
 }

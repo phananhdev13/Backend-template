@@ -1,6 +1,5 @@
 package com.acme.agentfactory;
 
-import com.acme.kernel.arch.Command;
 import com.acme.kernel.arch.InboundAdapter;
 import com.acme.kernel.arch.OutboundAdapter;
 import com.acme.kernel.arch.ReadModel;
@@ -19,7 +18,8 @@ import org.springframework.modulith.Modulith;
  *
  * <p>See {@code com.acme.order.OrderServiceApplication} for why this include filter exists: the
  * role annotations in {@code libs/kernel} carry no Spring dependency, so they are not stereotypes
- * and would otherwise be invisible to component scanning.
+ * and would otherwise be invisible to component scanning. {@code @Command} is deliberately absent
+ * - a command is a plain data record passed as a method argument, never instantiated by Spring.
  */
 @Modulith(systemName = "agent-factory")
 @SpringBootApplication
@@ -27,13 +27,7 @@ import org.springframework.modulith.Modulith;
         includeFilters =
                 @ComponentScan.Filter(
                         type = FilterType.ANNOTATION,
-                        classes = {
-                            UseCase.class,
-                            ReadModel.class,
-                            OutboundAdapter.class,
-                            InboundAdapter.class,
-                            Command.class
-                        }))
+                        classes = {UseCase.class, ReadModel.class, OutboundAdapter.class, InboundAdapter.class}))
 public class AgentFactoryApplication {
 
     public static void main(String[] args) {

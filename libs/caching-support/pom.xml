@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>backend-template</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>caching-support</artifactId>
+
+  <name>caching-support</name>
+  <description>The backend-neutral half of caching. @CacheContract states what a cached query
+    needs - where entries live, how long they last, whether they carry personal
+    data - and this module builds the CacheManager that honours it, whether the
+    backend behind it is an in-process Caffeine cache or a shared Redis one.
+    Application code states intent; only this module knows which library is
+    doing the caching.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>kernel</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-cache</artifactId>
+    </dependency>
+    <!-- The starter, not the bare client. Boot 4.1 split Redis's autoconfiguration into its own
+         module (spring-boot-data-redis: RedisConnectionFactory, the connection pool, Lettuce
+         wiring). Depending on spring-data-redis alone gives you RedisCacheManager's constructor
+         argument type with no connection factory bean to satisfy it - the same trap
+         spring-kafka alone was for messaging-support. Optional because a service that only
+         wants CacheBackend.LOCAL should not have to carry a Redis client. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- Caffeine is CacheBackend.LOCAL. Not pulled in by spring-boot-starter-cache itself - Boot
+         supports several local cache providers and picks whichever is on the classpath - so a
+         service that wants only CacheBackend.DISTRIBUTED should not have to carry it. -->
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- GenericJacksonJsonRedisSerializer needs tools.jackson.databind.ObjectMapper on the compile
+         classpath. spring-data-redis lists it as optional for the same reason spring-kafka does -
+         a consumer that never touches the JSON serializer should not be forced to carry Jackson. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-json</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Testcontainers 2.x has no dedicated Redis module; a generic container running the
+         official image is the supported way to test against one. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -3,6 +3,7 @@ package com.acme.archtest;
 import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaEnumConstant;
+import com.tngtech.archunit.core.domain.JavaMethod;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,19 @@ public final class Annotations {
     /** Whether {@code type} carries the given annotation. */
     public static boolean has(JavaClass type, Class<? extends Annotation> annotation) {
         return find(type, annotation).isPresent();
+    }
+
+    /** The annotation of the given type on {@code method}, if present. */
+    public static Optional<JavaAnnotation<JavaMethod>> find(JavaMethod method, Class<? extends Annotation> annotation) {
+        return method.getAnnotations().stream()
+                .filter(a -> a.getRawType().getFullName().equals(annotation.getName()))
+                .findFirst();
+    }
+
+    /** Whether {@code method} carries the given annotation, addressed by its fully qualified name. */
+    public static boolean hasNamed(JavaMethod method, String annotationFullName) {
+        return method.getAnnotations().stream()
+                .anyMatch(a -> a.getRawType().getFullName().equals(annotationFullName));
     }
 
     /** A string member, falling back to {@code fallback} when absent. */
@@ -72,6 +86,15 @@ public final class Annotations {
                 .get(member)
                 .filter(Integer.class::isInstance)
                 .map(Integer.class::cast)
+                .orElse(fallback);
+    }
+
+    /** A long member, falling back to {@code fallback} when absent. */
+    public static long longValue(JavaAnnotation<?> annotation, String member, long fallback) {
+        return annotation
+                .get(member)
+                .filter(Long.class::isInstance)
+                .map(Long.class::cast)
                 .orElse(fallback);
     }
 

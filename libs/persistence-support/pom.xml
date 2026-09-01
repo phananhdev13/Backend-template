@@ -24,9 +24,22 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
+    <!-- The starter, not the bare library. Boot 4.1 split Flyway's autoconfiguration into its own
+         module (spring-boot-flyway: FlywayAutoConfiguration, the bean that actually runs
+         migrations against the DataSource on startup). Depending on flyway-core alone gives you
+         the migration engine with nothing to invoke it - Hibernate's own schema validation then
+         fails against tables that were never created, the same trap spring-kafka alone was for
+         messaging-support. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+    </dependency>
+    <!-- Flyway 10+ moved database-specific support out of flyway-core; without this, Flyway
+         refuses to run at all against Postgres ("Unsupported Database: PostgreSQL"), rather than
+         degrading. -->
     <dependency>
       <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
+      <artifactId>flyway-database-postgresql</artifactId>
     </dependency>
   </dependencies>
 </project>

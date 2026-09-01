@@ -22,6 +22,8 @@ An ADR is never edited to change its decision. It is superseded by a new one, an
 | [0010](0010-testcontainers-for-every-integration-test.md) | Testcontainers for every integration test | Accepted | 2026-08-30 | — |
 | [0011](0011-revision-and-flatten-plugin-for-versioning.md) | `${revision}` and flatten-maven-plugin for monorepo versioning | Accepted | 2026-08-30 | — |
 | [0012](0012-the-claude-harness-is-part-of-the-product.md) | The `.claude` harness is part of the product | Accepted | 2026-08-30 | — |
+| [0013](0013-two-cache-backends-behind-one-abstraction.md) | Two cache backends behind one Spring Cache abstraction | Accepted | 2026-09-01 | — |
+| [0014](0014-rabbitmq-classic-queues-for-point-to-point-tasks.md) | RabbitMQ classic queues for point-to-point tasks, kept apart from event streams | Accepted | 2026-09-01 | — |
 
 Statuses are `Proposed`, `Accepted`, `Superseded` or `Rejected`. A rejected ADR stays in the
 index: the fact that an option was considered and refused is the part worth keeping.

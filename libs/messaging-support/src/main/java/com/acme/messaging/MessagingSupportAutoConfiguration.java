@@ -1,11 +1,19 @@
 package com.acme.messaging;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.amqp.core.Declarables;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.retry.MessageRecoverer;
+import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.boot.amqp.autoconfigure.RabbitListenerRetrySettingsCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -13,8 +21,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaConsumerFactoryCustomizer;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
+import org.springframework.boot.retry.RetryPolicySettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -175,6 +187,88 @@ public class MessagingSupportAutoConfiguration {
         @ConditionalOnMissingBean(ProcessedMessageStore.class)
         ProcessedMessageStore processedMessageStore(JdbcClient jdbcClient, Clock clock) {
             return new JdbcProcessedMessageStore(jdbcClient, clock);
+        }
+    }
+
+    /**
+     * Wires the RabbitMQ classic task queue: discovery, provisioning, publishing, retry and
+     * dead-lettering. {@code rabbit-task-defaults.properties} turns retry on by default - a task
+     * queue with retry off dead-letters on the first transient failure, which defeats the reason
+     * a queue exists rather than an {@code @Async} method.
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(RabbitTemplate.class)
+    @PropertySource("classpath:rabbit-task-defaults.properties")
+    static class RabbitTaskConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean
+        TaskRegistry taskRegistry(MessagingProperties properties) {
+            return new TaskRegistry(properties.getBasePackages());
+        }
+
+        /**
+         * Every task serialises the same way, decided once here - the Jackson-3 converter, never
+         * the Jackson-2-named {@code Jackson2JsonMessageConverter} still on the classpath for
+         * back-compat. Boot's own {@code RabbitTemplateConfigurer} wires whichever single
+         * {@code MessageConverter} bean is present into the autoconfigured {@code RabbitTemplate},
+         * so declaring it here is enough - nothing here constructs a {@code RabbitTemplate} itself.
+         */
+        @Bean
+        @ConditionalOnMissingBean(MessageConverter.class)
+        MessageConverter taskMessageConverter() {
+            return new JacksonJsonMessageConverter();
+        }
+
+        /**
+         * The queues every discovered task needs, declared from the contracts rather than by hand.
+         */
+        @Bean
+        @ConditionalOnProperty(prefix = "acme.messaging", name = "auto-provision", matchIfMissing = true)
+        Declarables taskQueues(TaskRegistry registry) {
+            return new RabbitTaskQueueProvisioner().toQueues(registry.all());
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(TaskPublisher.class)
+        TaskPublisher rabbitTaskPublisher(RabbitTemplate template) {
+            return new RabbitTaskPublisher(template);
+        }
+
+        /**
+         * Where a task goes once every retry attempt has failed.
+         *
+         * <p>The routing key is computed from the failing message's own {@code receivedRoutingKey}
+         * rather than fixed at construction, because one recoverer serves every queue this service
+         * declares - the same reason {@link #messagingErrorHandler} above computes a Kafka record's
+         * dead-letter topic from the record instead of taking one topic name. Publishing through the
+         * default (nameless) exchange lands the message in the queue whose name matches that routing
+         * key exactly, which {@link RabbitTaskQueueProvisioner} already declared as
+         * {@code <queue>.dlq}.
+         */
+        @Bean
+        @ConditionalOnMissingBean(MessageRecoverer.class)
+        MessageRecoverer taskMessageRecoverer(RabbitTemplate template) {
+            SpelExpressionParser parser = new SpelExpressionParser();
+            Expression defaultExchange = parser.parseExpression("''");
+            Expression deadLetterRoutingKey = parser.parseExpression("messageProperties.receivedRoutingKey + '.dlq'");
+            return new RepublishMessageRecoverer(template, defaultExchange, deadLetterRoutingKey);
+        }
+
+        /**
+         * The retry budget every task queue shares - bounded attempts and bounded backoff growth,
+         * so a broker outage does not turn into an unbounded retry storm once it recovers.
+         */
+        @Bean
+        RabbitListenerRetrySettingsCustomizer taskRetrySettingsCustomizer(MessagingProperties properties) {
+            return settings -> configureRetry(settings, properties.getRabbit());
+        }
+
+        private static void configureRetry(RetryPolicySettings settings, MessagingProperties.Rabbit rabbit) {
+            settings.setMaxRetries((long) Math.max(rabbit.getMaxDeliveryAttempts() - 1, 0));
+            settings.setDelay(Duration.ofMillis(rabbit.getRetryInitialIntervalMs()));
+            settings.setMultiplier(rabbit.getRetryMultiplier());
+            settings.setMaxDelay(Duration.ofMillis(rabbit.getRetryMaxIntervalMs()));
         }
     }
 }

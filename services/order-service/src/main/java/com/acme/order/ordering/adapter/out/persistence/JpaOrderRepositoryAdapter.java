@@ -27,9 +27,29 @@ public class JpaOrderRepositoryAdapter implements OrderRepository {
         this.jpa = jpa;
     }
 
+    /**
+     * Inserts a never-before-seen order, or updates the row already tracking one.
+     *
+     * <p>An order that already has a row cannot be saved by constructing a fresh detached
+     * {@code OrderEntity} and handing it to {@code save()}: a freshly constructed entity's
+     * {@code @Version} defaults to {@code 0}, which only ever matches a row's actual version by
+     * coincidence. On any second save, Hibernate would compare that {@code 0} against whatever the
+     * row's version has advanced to, find no match, and report the update as a lost optimistic-lock
+     * race that never happened. Loading the managed entity and mutating it in place instead means
+     * Hibernate's own dirty checking issues the update against the version it already knows is
+     * current.
+     */
     @Override
     public void save(Order order) {
-        jpa.save(toEntity(order));
+        List<OrderLineEntity> lines = toLineEntities(order);
+        OrderEntity entity = jpa.findById(order.id().value())
+                .map(existing -> {
+                    existing.applyState(order.status(), lines);
+                    return existing;
+                })
+                .orElseGet(() -> new OrderEntity(
+                        order.id().value(), order.customerId().value(), order.status(), order.placedAt(), lines));
+        jpa.save(entity);
     }
 
     @Override
@@ -37,15 +57,14 @@ public class JpaOrderRepositoryAdapter implements OrderRepository {
         return jpa.findById(id.value()).map(JpaOrderRepositoryAdapter::toDomain);
     }
 
-    private static OrderEntity toEntity(Order order) {
-        List<OrderLineEntity> lines = order.lines().stream()
+    private static List<OrderLineEntity> toLineEntities(Order order) {
+        return order.lines().stream()
                 .map(line -> new OrderLineEntity(
                         line.sku(),
                         line.quantity(),
                         line.unitPrice().amount(),
                         line.unitPrice().currency().getCurrencyCode()))
                 .toList();
-        return new OrderEntity(order.id().value(), order.customerId().value(), order.status(), order.placedAt(), lines);
     }
 
     /**

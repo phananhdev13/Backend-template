@@ -25,6 +25,7 @@
     <module>libs/persistence-support</module>
     <module>libs/messaging-support</module>
     <module>libs/observability-support</module>
+    <module>libs/caching-support</module>
     <module>services/order-service</module>
     <module>services/agent-factory</module>
   </modules>
@@ -96,6 +97,11 @@
       <dependency>
         <groupId>com.acme</groupId>
         <artifactId>observability-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>caching-support</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

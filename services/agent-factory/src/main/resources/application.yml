@@ -28,6 +28,15 @@ spring:
         enable.idempotence: true
         delivery.timeout.ms: 30000
         max.block.ms: 5000
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   mvc:
     apiversion:
       default: 1
@@ -43,6 +52,14 @@ acme:
     kafka:
       max-delivery-attempts: 4
       retry-backoff-ms: 1000
+    rabbit:
+      max-delivery-attempts: 4
+      retry-initial-interval-ms: 1000
+      retry-multiplier: 2.0
+      retry-max-interval-ms: 10000
+  caching:
+    base-packages:
+      - com.acme.agentfactory
 
 management:
   endpoints:

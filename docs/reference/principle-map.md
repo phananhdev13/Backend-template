@@ -22,16 +22,18 @@ reviewing, because those are the rules that decay without anyone noticing.
 | [P-041](../principles/P-041-outbound-adapters-one-port.md) | Outbound adapters implement exactly one port | `AdapterRules.oneAdapterPerPortPerKind`, `AdapterRules.outboundAdaptersImplementTheirDeclaredPort`, `NamingRules.outboundAdaptersEndWithAdapter`, `PortRules.everyOutputPortHasAnImplementation` | — |
 | [P-042](../principles/P-042-event-handlers-delivery-contract.md) | Event handlers are adapters with a delivery contract | _review only_ | — |
 | [P-050](../principles/P-050-error-handling.md) | Failures carry domain meaning, not HTTP status | `ErrorRules.businessFailuresExtendDomainException`, `ErrorRules.domainNeverThrowsWebExceptions`, `tools/check-error-codes.sh` | — |
-| [P-051](../principles/P-051-remote-call-resilience.md) | Every remote call has a timeout, a retry policy, and a bulkhead | `ResilienceRules.remoteCallsDeclareTimeouts` | `AgentEventPublisherAdapter`, `OrderEventPublisherAdapter`, `ResilienceRules` |
+| [P-051](../principles/P-051-remote-call-resilience.md) | Every remote call has a timeout, a retry policy, and a bulkhead | `ResilienceRules.remoteCallsDeclareTimeouts` | `AgentDeploymentProvisioningAdapter`, `AgentEventPublisherAdapter`, `OrderEventPublisherAdapter`, `ResilienceRules` |
 | [P-060](../principles/P-060-observability.md) | A request is followable end to end | `ObservabilityRules.loggersAreConstants`, `ObservabilityRules.oneLoggingFacade`, `ObservabilityRules.useCasesEmitTheirIdentifier` | — |
 | [P-070](../principles/P-070-event-semantics.md) | Event semantics are declared, not configured | `EventContractRules.compactedStreamsCarryStateSnapshots`, `EventContractRules.everyDomainEventDeclaresAContract`, `EventContractRules.orderingPromisesRequireAKey`, `EventContractRules.partitionKeyExistsOnRecord`, `EventContractRules.unboundedChoicesAreJustified` | — |
 | [P-071](../principles/P-071-idempotency.md) | At-least-once delivery makes idempotency mandatory | `EventContractRules.atLeastOnceHandlersAreIdempotent`, `EventContractRules.idempotencyKeyIsStableAcrossRetries` | `Idempotent` |
-| [P-072](../principles/P-072-transactional-outbox.md) | State changes and their events commit together | `OutboxRules.noBrokerCallInsideATransaction` | `AgentEventPublisherAdapter`, `OrderEventPublisherAdapter` |
+| [P-072](../principles/P-072-transactional-outbox.md) | State changes and their events commit together | `OutboxRules.noBrokerCallInsideATransaction` | `AgentDeploymentProvisioningAdapter`, `AgentEventPublisherAdapter`, `OrderEventPublisherAdapter` |
 | [P-080](../principles/P-080-api-versioning.md) | APIs are versioned contracts | `EventContractRules.everyContractHasASchemaFile`, `tools/check-error-codes.sh` | — |
 | [P-090](../principles/P-090-layered-tests.md) | Tests are layered to match the architecture | _review only_ | — |
 | [P-100](../principles/P-100-vertical-slice-modules.md) | Feature modules are vertical slices with sealed internals | `AdapterRules.adaptersDoNotDependOnOtherAdapters`, `BoundaryRules.crossModuleTypesArePublicApi`, `BoundaryRules.internalTypesStayInTheirModule`, `BoundaryRules.noCyclesBetweenModules` | — |
 | [P-110](../principles/P-110-expand-migrate-contract.md) | Schema changes are expand-migrate-contract | `tools/check-migrations.sh` | — |
 | [P-120](../principles/P-120-security-at-use-case-boundary.md) | Security decisions happen at the use case boundary | `SecurityRules.domainNeverReadsSecurityContext`, `SecurityRules.noAuthorisationInAdapters` | — |
+| [P-130](../principles/P-130-caching-contracts.md) | Caching contracts are declared, not configured | `CacheContractRules.distributedPersonalDataCachesCarryAnAdr`, `CacheContractRules.everyCacheContractPairsWithASpringCacheAnnotation` | `CacheContract` |
+| [P-131](../principles/P-131-task-queues.md) | Task queues are point-to-point, never broadcast | `TaskContractRules.everyTaskDeclaresAContract`, `TaskContractRules.everyTaskHandlerIsIdempotent`, `TaskContractRules.handledTaskDeclaresAContract`, `TaskContractRules.personalDataTasksCarryAnAdr` | `AgentDeploymentProvisioningAdapter` |
 
 ## Not mechanically enforced
 

@@ -3,6 +3,7 @@ package com.acme.order;
 import com.acme.archtest.AdapterRules;
 import com.acme.archtest.AggregateRules;
 import com.acme.archtest.BoundaryRules;
+import com.acme.archtest.CacheContractRules;
 import com.acme.archtest.ConfigRules;
 import com.acme.archtest.DomainRules;
 import com.acme.archtest.ErrorRules;
@@ -16,6 +17,7 @@ import com.acme.archtest.ReadModelRules;
 import com.acme.archtest.ResilienceRules;
 import com.acme.archtest.RoleRules;
 import com.acme.archtest.SecurityRules;
+import com.acme.archtest.TaskContractRules;
 import com.acme.archtest.TraceabilityRules;
 import com.acme.archtest.UseCaseRules;
 import com.acme.archtest.ValueObjectRules;
@@ -94,4 +96,10 @@ class ArchitectureTest {
 
     @ArchTest
     static final ArchTests security = ArchTests.in(SecurityRules.class);
+
+    @ArchTest
+    static final ArchTests cacheContracts = ArchTests.in(CacheContractRules.class);
+
+    @ArchTest
+    static final ArchTests taskContracts = ArchTests.in(TaskContractRules.class);
 }

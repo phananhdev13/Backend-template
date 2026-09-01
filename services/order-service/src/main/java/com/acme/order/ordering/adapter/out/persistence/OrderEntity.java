@@ -58,6 +58,18 @@ public class OrderEntity extends AuditableEntity {
         this.lines = new ArrayList<>(lines);
     }
 
+    /**
+     * Replaces this managed entity's state in place, so the update Hibernate issues carries this
+     * row's own tracked {@code @Version} rather than the {@code 0} a freshly constructed entity
+     * would default to. See {@code JpaOrderRepositoryAdapter.save} for why that distinction is the
+     * difference between an update and an optimistic-lock failure on every second save.
+     */
+    void applyState(OrderStatus status, List<OrderLineEntity> lines) {
+        this.status = status;
+        this.lines.clear();
+        this.lines.addAll(lines);
+    }
+
     String id() {
         return id;
     }

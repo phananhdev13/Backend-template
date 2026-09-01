@@ -47,6 +47,13 @@ Do not remove `@Version` to make a test pass. The test is right.
 Never edit an applied migration - Flyway checksums it and every environment that already ran it
 will refuse to start. Write a new one.
 
+A service that depends on `messaging-support` for `ProcessedMessageStore` or the RabbitMQ task
+queue shares its classpath with that library's own `V001__processed_message.sql`. Flyway's
+`classpath:db/migration` location scans every jar's `db/migration/**` recursively, so that
+migration is discovered even if your `spring.flyway.locations` only names your own directory -
+and Flyway normalises leading zeros, so **your own `V1` collides with the library's `V001`** with
+`Found more than one migration with version 1`. Start a service's own numbering at `V2`.
+
 **Expand, migrate, contract.** A schema change is three deployments, not one, because at any moment
 old and new code are both running:
 
@@ -76,3 +83,16 @@ the database - reads are allowed to bypass the domain precisely because they cha
 - N+1 — a lazy collection walked in a loop. Fetch-join in the query, or use a read model.
 - Deadlocks under load — two use cases updating the same rows in different orders. Order writes
   consistently, or narrow the aggregate.
+- `ObjectOptimisticLockingFailureException` on a save that should be an ordinary update — the
+  adapter built a fresh detached entity and handed it to `save()`. A freshly constructed entity's
+  `@Version` defaults to `0`, which only matches a row's actual version by coincidence. Load the
+  managed entity with `findById` and mutate it in place instead; see `JpaOrderRepositoryAdapter`
+  or `JpaAgentRepositoryAdapter` for the pattern. If the aggregate has a child collection with a
+  unique constraint, reconcile children by natural key rather than clearing and re-adding them
+  wholesale - Hibernate flushes inserts before deletes, so a wholesale replace collides with the
+  constraint on rows that only changed a non-key column (`AgentEntity.applyState`).
+- `BadSqlGrammarException: ... Can't infer the SQL type to use for an instance of
+  java.time.Instant` from a raw `JdbcClient` statement — pgjdbc has no default SQL type for
+  `Instant`; JDBC 4.2 only defines conversions for the offset and local JSR-310 types. Bind
+  `instant.atOffset(ZoneOffset.UTC)` instead. `Instant` read back from a `timestamptz` column is
+  fine either way - this only bites parameter binding, not result mapping.

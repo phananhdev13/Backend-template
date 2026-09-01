@@ -3,6 +3,8 @@ package com.acme.messaging;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -36,8 +38,8 @@ public final class JdbcProcessedMessageStore implements ProcessedMessageStore {
                             + "values (:group, :key, :processedAt, :expiresAt)")
                     .param("group", consumerGroup)
                     .param("key", messageKey)
-                    .param("processedAt", now)
-                    .param("expiresAt", now.plus(retention))
+                    .param("processedAt", toBindable(now))
+                    .param("expiresAt", toBindable(now.plus(retention)))
                     .update();
             return true;
         } catch (DuplicateKeyException alreadyHandled) {
@@ -49,10 +51,17 @@ public final class JdbcProcessedMessageStore implements ProcessedMessageStore {
     @Override
     public void purgeExpired() {
         int removed = jdbc.sql("delete from processed_message where expires_at < :now")
-                .param("now", Instant.now(clock))
+                .param("now", toBindable(Instant.now(clock)))
                 .update();
         if (removed > 0) {
             log.info("Purged {} expired idempotency records", removed);
         }
+    }
+
+    // pgjdbc has no default SQL type for java.time.Instant - only the offset/local JSR-310 types
+    // JDBC 4.2 itself defines - so every Instant is bound as the OffsetDateTime that maps directly
+    // to timestamptz.
+    private static OffsetDateTime toBindable(Instant instant) {
+        return instant.atOffset(ZoneOffset.UTC);
     }
 }

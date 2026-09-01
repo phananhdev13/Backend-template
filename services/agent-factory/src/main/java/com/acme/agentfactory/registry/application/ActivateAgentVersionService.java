@@ -7,11 +7,14 @@ import com.acme.agentfactory.registry.domain.AgentDefinition;
 import com.acme.agentfactory.registry.domain.AgentId;
 import com.acme.agentfactory.registry.domain.AgentVersionActivated;
 import com.acme.kernel.arch.UseCase;
+import com.acme.kernel.cache.CacheBackend;
+import com.acme.kernel.cache.CacheContract;
 import com.acme.kernel.error.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +39,14 @@ public class ActivateAgentVersionService implements ActivateAgentVersionUseCase 
         this.clock = clock;
     }
 
+    // Evicting here rather than from AgentSummaryQuery keeps the invalidation next to the one write
+    // that makes byId's cached answer wrong, and is the same cache-name-plus-backend the query
+    // declares - CacheContractRules checks the two agree. The eviction advice and the transactional
+    // advice are ordered by the container, not declared here; treat this as best-effort staleness
+    // reduction on a cache that already expires within ttlSeconds, not a correctness guarantee -
+    // that guarantee belongs to the outbox, not to a cache.
+    @CacheContract(name = "agents.summary-by-id", backend = CacheBackend.LOCAL, ttlSeconds = 30)
+    @CacheEvict(cacheNames = "agents.summary-by-id", key = "#command.agentId()")
     @Override
     public void activateVersion(ActivateAgentVersionCommand command) {
         AgentId id = new AgentId(command.agentId());

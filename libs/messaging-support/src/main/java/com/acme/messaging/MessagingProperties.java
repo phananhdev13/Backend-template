@@ -27,6 +27,8 @@ public class MessagingProperties {
 
     private final Kafka kafka = new Kafka();
 
+    private final Rabbit rabbit = new Rabbit();
+
     /**
      * Prefix distinguishing this environment's or tenant's streams on a shared broker.
      *
@@ -85,6 +87,15 @@ public class MessagingProperties {
      */
     public Kafka getKafka() {
         return kafka;
+    }
+
+    /**
+     * RabbitMQ task queue retry policy.
+     *
+     * @return the nested Rabbit settings
+     */
+    public Rabbit getRabbit() {
+        return rabbit;
     }
 
     /** Cluster capabilities that no contract can know, and no contract should have to state. */
@@ -201,6 +212,78 @@ public class MessagingProperties {
 
         public void setRetryBackoffMs(long retryBackoffMs) {
             this.retryBackoffMs = retryBackoffMs;
+        }
+    }
+
+    /**
+     * Retry policy for every RabbitMQ task queue in this service.
+     *
+     * <p>Unlike a Kafka event's semantics, a classic queue's retry budget is not something a
+     * {@code @TaskContract} declares - every consumer of a classic queue is already at-least-once
+     * with no alternative, so there is nothing per-task to state beyond the queue's name. How hard
+     * to retry before giving up is the one genuinely deployment-shaped knob left, the same as
+     * {@link Kafka#getMaxDeliveryAttempts()}.
+     */
+    public static class Rabbit {
+
+        private int maxDeliveryAttempts = 4;
+
+        private long retryInitialIntervalMs = 1000;
+
+        private double retryMultiplier = 2.0;
+
+        private long retryMaxIntervalMs = 10_000;
+
+        /**
+         * Total delivery attempts - the first try plus retries - before a task is dead-lettered.
+         *
+         * @return the maximum number of attempts
+         */
+        public int getMaxDeliveryAttempts() {
+            return maxDeliveryAttempts;
+        }
+
+        public void setMaxDeliveryAttempts(int maxDeliveryAttempts) {
+            this.maxDeliveryAttempts = maxDeliveryAttempts;
+        }
+
+        /**
+         * Delay before the first retry.
+         *
+         * @return the initial backoff, in milliseconds
+         */
+        public long getRetryInitialIntervalMs() {
+            return retryInitialIntervalMs;
+        }
+
+        public void setRetryInitialIntervalMs(long retryInitialIntervalMs) {
+            this.retryInitialIntervalMs = retryInitialIntervalMs;
+        }
+
+        /**
+         * Growth factor applied to the backoff after each failed attempt.
+         *
+         * @return the backoff multiplier
+         */
+        public double getRetryMultiplier() {
+            return retryMultiplier;
+        }
+
+        public void setRetryMultiplier(double retryMultiplier) {
+            this.retryMultiplier = retryMultiplier;
+        }
+
+        /**
+         * Ceiling the backoff never grows past, no matter how many attempts remain.
+         *
+         * @return the maximum backoff, in milliseconds
+         */
+        public long getRetryMaxIntervalMs() {
+            return retryMaxIntervalMs;
+        }
+
+        public void setRetryMaxIntervalMs(long retryMaxIntervalMs) {
+            this.retryMaxIntervalMs = retryMaxIntervalMs;
         }
     }
 }

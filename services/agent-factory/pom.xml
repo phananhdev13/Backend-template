@@ -37,6 +37,10 @@
       <groupId>com.acme</groupId>
       <artifactId>observability-support</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>caching-support</artifactId>
+    </dependency>
 
     <!-- The starter brings spring-boot-kafka, the module that actually wires KafkaTemplate,
          ProducerFactory, ConsumerFactory and @KafkaListener processing. spring-kafka alone is
@@ -44,6 +48,23 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-kafka</artifactId>
+    </dependency>
+    <!-- The classic task queue: ProvisionAgentDeploymentWorker's @RabbitListener needs
+         spring-boot-amqp's autoconfiguration, the same optional-in-messaging-support,
+         required-here pattern as the Kafka starter above. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-amqp</artifactId>
+    </dependency>
+    <!-- CacheBackend.LOCAL for AgentSummaryQuery.byId. -->
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
+    <!-- CacheBackend.DISTRIBUTED for AgentSummaryQuery.list. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
     </dependency>
 
     <!-- Spring Modulith gives us two things: verification that feature packages do
@@ -97,7 +118,17 @@
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-rabbitmq</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

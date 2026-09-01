@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -30,6 +31,12 @@ class MessagingSupportAutoConfigurationTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
                     org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration.class,
+                    // amqp-client is on this module's own classpath even for a service that never
+                    // adds spring-boot-starter-amqp itself (see the pom's optional-dependency
+                    // comment), so RabbitTaskConfiguration's @ConditionalOnClass always evaluates
+                    // true here - this needs Boot's own Rabbit autoconfiguration alongside Kafka's,
+                    // the same way a real service with both starters on the classpath would.
+                    RabbitAutoConfiguration.class,
                     MessagingSupportAutoConfiguration.class))
             // A stand-in for whatever DataSource the owning service configures. Constructing a
             // SimpleDriverDataSource never opens a connection, so this needs no real database - it
@@ -37,7 +44,12 @@ class MessagingSupportAutoConfigurationTest {
             .withBean(DataSource.class, SimpleDriverDataSource::new)
             .withBean(JdbcClient.class, () -> JdbcClient.create(new SimpleDriverDataSource()))
             .withPropertyValues(
-                    "spring.kafka.bootstrap-servers=localhost:9092", "acme.messaging.base-packages=com.acme.messaging");
+                    "spring.kafka.bootstrap-servers=localhost:9092",
+                    // Never dialled for a context-loading test - Boot's ConnectionFactory connects
+                    // lazily on first use, the same reason the Kafka bootstrap server above is fake.
+                    "spring.rabbitmq.host=localhost",
+                    "spring.rabbitmq.port=59672",
+                    "acme.messaging.base-packages=com.acme.messaging");
 
     @Test
     void theContextStartsWithAKafkaTemplateReadyToPublish() {

@@ -29,9 +29,29 @@ public class JpaAgentRepositoryAdapter implements AgentRepository {
         this.jpa = jpa;
     }
 
+    /**
+     * Inserts a never-before-seen aggregate, or updates the row already tracking one.
+     *
+     * <p>An aggregate that already has a row cannot be saved by constructing a fresh detached
+     * {@code AgentEntity} and handing it to {@code save()}: a freshly constructed entity's
+     * {@code @Version} defaults to {@code 0}, which only ever matches a row's actual version by
+     * coincidence. On any activation, capability change or other second save, Hibernate would
+     * compare that {@code 0} against whatever the row's version has advanced to, find no match, and
+     * report the update as a lost optimistic-lock race that never happened. Loading the managed
+     * entity and mutating it in place instead means Hibernate's own dirty checking issues the
+     * update against the version it already knows is current.
+     */
     @Override
     public void save(AgentDefinition agent) {
-        jpa.save(toEntity(agent));
+        List<AgentVersionEntity> versions = toVersionEntities(agent);
+        AgentEntity entity = jpa.findById(agent.id().value())
+                .map(existing -> {
+                    existing.applyState(agent.name().value(), versions);
+                    return existing;
+                })
+                .orElseGet(
+                        () -> new AgentEntity(agent.id().value(), agent.name().value(), versions));
+        jpa.save(entity);
     }
 
     @Override
@@ -44,8 +64,8 @@ public class JpaAgentRepositoryAdapter implements AgentRepository {
         return jpa.existsByName(name);
     }
 
-    private static AgentEntity toEntity(AgentDefinition agent) {
-        List<AgentVersionEntity> versions = agent.versions().stream()
+    private static List<AgentVersionEntity> toVersionEntities(AgentDefinition agent) {
+        return agent.versions().stream()
                 .map(version -> new AgentVersionEntity(
                         version.number(),
                         version.model().provider(),
@@ -55,7 +75,6 @@ public class JpaAgentRepositoryAdapter implements AgentRepository {
                         version.status().name(),
                         version.createdAt()))
                 .toList();
-        return new AgentEntity(agent.id().value(), agent.name().value(), versions);
     }
 
     /**

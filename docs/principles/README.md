@@ -35,6 +35,8 @@ thing you have not added before. Read the linked guide when you need the steps.
 | [P-100](P-100-vertical-slice-modules.md) | Feature modules are vertical slices with sealed internals | cross-cutting | `BoundaryRules.internalTypesStayInTheirModule()` | [G-010](../guides/G-010-new-service.md) |
 | [P-110](P-110-expand-migrate-contract.md) | Schema changes are expand-migrate-contract | adapter | `tools/check-migrations.sh` | [G-040](../guides/G-040-persistence.md) |
 | [P-120](P-120-security-at-use-case-boundary.md) | Security decisions happen at the use case boundary | application | `SecurityRules.noAuthorisationInAdapters()` | [G-020](../guides/G-020-use-case.md) |
+| [P-130](P-130-caching-contracts.md) | Caching contracts are declared, not configured | application | `CacheContractRules.everyCacheContractPairsWithASpringCacheAnnotation()` | [caching](../../.claude/skills/caching/SKILL.md) |
+| [P-131](P-131-task-queues.md) | Task queues are point-to-point, never broadcast | domain | `TaskContractRules.everyTaskHandlerIsIdempotent()` | [task-queues](../../.claude/skills/task-queues/SKILL.md) |
 
 The **Enforced by** column names the primary rule; several principles are enforced by more
 than one, and each principle file lists the full set with its failure message.
