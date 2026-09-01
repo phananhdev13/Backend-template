@@ -11,5 +11,6 @@ public enum AdapterKind {
     CACHE,
     BLOB_STORAGE,
     RPC,
+    WORKFLOW,
     IN_MEMORY
 }

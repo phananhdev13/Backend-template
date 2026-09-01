@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>backend-template</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>temporal-support</artifactId>
+
+  <name>temporal-support</name>
+  <description>Durable workflow orchestration on plain temporal-sdk, not
+    temporal-spring-boot-starter - its own POM still imports Spring Boot 2.7 at its latest
+    release (see ADR-0016). Wires WorkflowServiceStubs/WorkflowClient from acme.temporal
+    configuration, starts one worker per service registering every @WorkflowDefinition and
+    every @InboundAdapter(AdapterKind.WORKFLOW) activity bean it finds, and is the one place
+    ActivityOptions can be built with a mandatory timeout.</description>
+
+  <properties>
+    <temporal-sdk.version>1.38.0</temporal-sdk.version>
+    <!-- temporal-sdk itself pins guava 33.4.8-android directly, while grpc-java (resolved to
+         Boot's managed 1.83.1 through the mediation described above) pulls a mix of
+         33.6.0-android and 33.6.0-jre across its own modules - three declared versions of the
+         same artifact on one compile classpath, which -Pdeep-analysis's DependencyConvergence
+         enforcer rule refuses outright regardless of which one mediation would otherwise pick.
+         Pinned to the -jre flavour grpc-services itself asks for, since this is a plain JVM
+         server, never Android. -->
+    <guava.version>33.6.0-jre</guava.version>
+    <!-- Same convergence problem one level down: temporal-sdk, grpc-java's own modules and
+         protobuf-java-util each declare a different error_prone_annotations version. -->
+    <error-prone-annotations.version>2.50.0</error-prone-annotations.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>${error-prone-annotations.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>kernel</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
+    <!-- Not optional: unlike caching-support's Redis or messaging-support's Kafka, there is no
+         starter to gate this behind - every service that pulls in temporal-support wants the
+         SDK itself. Version managed here, not by spring-boot-dependencies, since Boot does not
+         know Temporal exists; grpc-java and protobuf-java - which temporal-serviceclient
+         depends on transitively - stay resolved to spring-boot-dependencies' own managed
+         versions (1.83.1 / 4.35.1) through Maven's nearest-declaration mediation, confirmed with
+         `mvn dependency:tree`. -->
+    <dependency>
+      <groupId>io.temporal</groupId>
+      <artifactId>temporal-sdk</artifactId>
+      <version>${temporal-sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>io.temporal</groupId>
+      <artifactId>temporal-testing</artifactId>
+      <version>${temporal-sdk.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

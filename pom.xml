@@ -27,6 +27,7 @@
     <module>libs/observability-support</module>
     <module>libs/caching-support</module>
     <module>libs/grpc-support</module>
+    <module>libs/temporal-support</module>
     <module>services/order-service</module>
     <module>services/agent-factory</module>
   </modules>
@@ -113,6 +114,11 @@
       <dependency>
         <groupId>com.acme</groupId>
         <artifactId>grpc-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>temporal-support</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

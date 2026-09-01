@@ -6,6 +6,7 @@ import com.acme.kernel.arch.Adr;
 import com.acme.kernel.arch.ImplementsPrinciple;
 import com.acme.kernel.arch.ReadModel;
 import com.acme.kernel.arch.UseCase;
+import com.acme.kernel.workflow.WorkflowDefinition;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchCondition;
@@ -46,6 +47,17 @@ public final class TraceabilityRules {
             .allowEmptyShould(true)
             .as("every read model resolves to a specification (P-000)")
             .because("queries are contracts with a caller too. "
+                    + "See docs/principles/P-000-repository-is-the-only-context.md");
+
+    @ArchTest
+    public static final ArchRule everyWorkflowDefinitionIsDocumented = classes()
+            .that()
+            .areAnnotatedWith(WorkflowDefinition.class)
+            .should(resolveTheirDocument(WorkflowDefinition.class, "id", "docs/use-cases"))
+            .allowEmptyShould(true)
+            .as("every workflow definition resolves to a specification (P-000)")
+            .because("a durable process spanning days is worth writing down at least as much as a "
+                    + "use case that commits in one transaction. "
                     + "See docs/principles/P-000-repository-is-the-only-context.md");
 
     @ArchTest

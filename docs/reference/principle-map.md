@@ -8,7 +8,7 @@ reviewing, because those are the rules that decay without anyone noticing.
 
 | Principle | Title | Enforced by | Claimed by |
 |---|---|---|---|
-| [P-000](../principles/P-000-repository-is-the-only-context.md) | The repository is the only context | `TraceabilityRules.adrReferencesResolve`, `TraceabilityRules.everyReadModelIsDocumented`, `TraceabilityRules.everyUseCaseIsDocumented`, `TraceabilityRules.principleReferencesResolve`, `tools/check-doc-links.sh`, `tools/check-rule-references.sh` | — |
+| [P-000](../principles/P-000-repository-is-the-only-context.md) | The repository is the only context | `TraceabilityRules.adrReferencesResolve`, `TraceabilityRules.everyReadModelIsDocumented`, `TraceabilityRules.everyUseCaseIsDocumented`, `TraceabilityRules.everyWorkflowDefinitionIsDocumented`, `TraceabilityRules.principleReferencesResolve`, `tools/check-doc-links.sh`, `tools/check-rule-references.sh` | — |
 | [P-001](../principles/P-001-progressive-disclosure.md) | Progressive disclosure over exhaustive instruction | _review only_ | — |
 | [P-010](../principles/P-010-annotated-architecture.md) | Every class declares its architectural role | `NamingRules.inputPortsEndWithUseCase`, `NamingRules.useCasesEndWithService`, `RoleRules.everyClassDeclaresARole`, `RoleRules.rolesMatchTheirPackage` | — |
 | [P-011](../principles/P-011-configuration-is-wiring.md) | Configuration is wiring, never logic | `ConfigRules.configurationContainsNoBusinessLogic`, `ConfigRules.nothingDependsOnConfiguration` | — |
@@ -18,6 +18,7 @@ reviewing, because those are the rules that decay without anyone noticing.
 | [P-030](../principles/P-030-use-case-unit-of-application-logic.md) | The use case is the unit of application logic | `UseCaseRules.inputPortsDeclareASingleOperation`, `UseCaseRules.useCasesAreTheTransactionBoundary`, `UseCaseRules.useCasesImplementExactlyOneInputPort` | — |
 | [P-031](../principles/P-031-dependencies-point-inwards.md) | Dependencies point inwards through ports | `LayeringRules.dependenciesPointInwards`, `LayeringRules.packagesFormAHexagon`, `PortRules.outputPortsSpeakDomainLanguage`, `UseCaseRules.adaptersCallPortsNotImplementations` | — |
 | [P-032](../principles/P-032-reads-and-writes-shaped-separately.md) | Reads and writes are shaped separately | `NamingRules.readModelsEndWithQuery`, `ReadModelRules.readModelsHaveNoSideEffects` | — |
+| [P-033](../principles/P-033-workflow-definitions-are-deterministic.md) | Workflow definitions are deterministic, and call the world only through an activity | `WorkflowRules.workflowDefinitionsStayFrameworkFree`, `WorkflowRules.workflowsBuildActivityOptionsThroughTheSanctionedFactory` | — |
 | [P-040](../principles/P-040-inbound-adapters-translate.md) | Inbound adapters translate, they do not decide | `AdapterRules.inboundAdaptersOnlyCallInputPorts`, `NamingRules.edgeDataTypesStayInAdapters`, `NamingRules.restAdaptersEndWithController` | — |
 | [P-041](../principles/P-041-outbound-adapters-one-port.md) | Outbound adapters implement exactly one port | `AdapterRules.oneAdapterPerPortPerKind`, `AdapterRules.outboundAdaptersImplementTheirDeclaredPort`, `NamingRules.outboundAdaptersEndWithAdapter`, `PortRules.everyOutputPortHasAnImplementation` | — |
 | [P-042](../principles/P-042-event-handlers-delivery-contract.md) | Event handlers are adapters with a delivery contract | _review only_ | — |
