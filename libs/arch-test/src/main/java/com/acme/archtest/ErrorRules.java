@@ -18,7 +18,11 @@ import com.tngtech.archunit.lang.ArchRule;
 public final class ErrorRules {
 
     private static final String[] TRANSPORT_PACKAGES = {
-        "org.springframework.web..", "org.springframework.http..", "jakarta.servlet..", "io.grpc..",
+        "org.springframework.web..",
+        "org.springframework.http..",
+        "jakarta.servlet..",
+        "io.grpc..",
+        "software.amazon.awssdk..",
     };
 
     @ArchTest

@@ -40,6 +40,7 @@ public final class DomainRules {
             "com.rabbitmq..",
             "io.grpc..",
             "com.google.protobuf..",
+            "software.amazon.awssdk..",
             "java.sql..",
             "javax.sql..");
 

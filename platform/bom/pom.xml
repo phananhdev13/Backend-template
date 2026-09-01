@@ -64,6 +64,11 @@
         <artifactId>temporal-support</artifactId>
         <version>${revision}</version>
       </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>blob-storage-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 </project>

@@ -32,7 +32,8 @@ public final class ResilienceRules {
             AdapterKind.HTTP_CLIENT.name(),
             AdapterKind.MESSAGING.name(),
             AdapterKind.CACHE.name(),
-            AdapterKind.RPC.name());
+            AdapterKind.RPC.name(),
+            AdapterKind.BLOB_STORAGE.name());
 
     @ArchTest
     public static final ArchRule remoteCallsDeclareTimeouts = classes()
