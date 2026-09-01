@@ -54,6 +54,11 @@
         <artifactId>caching-support</artifactId>
         <version>${revision}</version>
       </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>grpc-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 </project>

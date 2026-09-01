@@ -38,6 +38,8 @@ public final class DomainRules {
             "com.fasterxml.jackson..",
             "org.apache.kafka..",
             "com.rabbitmq..",
+            "io.grpc..",
+            "com.google.protobuf..",
             "java.sql..",
             "javax.sql..");
 

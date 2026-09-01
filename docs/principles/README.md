@@ -24,6 +24,7 @@ thing you have not added before. Read the linked guide when you need the steps.
 | [P-040](P-040-inbound-adapters-translate.md) | Inbound adapters translate, they do not decide | adapter | `AdapterRules.inboundAdaptersOnlyCallInputPorts()` | [G-070](../guides/G-070-api.md) |
 | [P-041](P-041-outbound-adapters-one-port.md) | Outbound adapters implement exactly one port | adapter | `AdapterRules.outboundAdaptersImplementTheirDeclaredPort()` | [G-040](../guides/G-040-persistence.md) |
 | [P-042](P-042-event-handlers-delivery-contract.md) | Event handlers are adapters with a delivery contract | adapter | `EventContractRules.atLeastOnceHandlersAreIdempotent()` | [G-030](../guides/G-030-events.md) |
+| [P-043](P-043-grpc-internal-rpc.md) | gRPC is for internal service-to-service RPC, translated at one boundary | adapter | `DomainRules.domainDependsOnlyOnDomain()` | [grpc](../../.claude/skills/grpc/SKILL.md) |
 | [P-050](P-050-error-handling.md) | Failures carry domain meaning, not HTTP status | cross-cutting | `ErrorRules.domainNeverThrowsWebExceptions()` | [G-070](../guides/G-070-api.md) |
 | [P-051](P-051-remote-call-resilience.md) | Every remote call has a timeout, a retry policy, and a bulkhead | adapter | `ResilienceRules.remoteCallsDeclareTimeouts()` | [G-050](../guides/G-050-resilience.md) |
 | [P-060](P-060-observability.md) | A request is followable end to end | cross-cutting | `ObservabilityRules.useCasesEmitTheirIdentifier()` | [G-060](../guides/G-060-observability.md) |

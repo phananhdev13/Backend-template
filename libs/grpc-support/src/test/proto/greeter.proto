@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.acme.grpc.test;
+
+option java_package = "com.acme.grpc.test.proto";
+option java_multiple_files = true;
+
+// A throwaway service this module's own tests call, over a real (and separately, an in-process)
+// gRPC transport - proving the exception advice and the correlation interceptors actually work,
+// not merely that they compile. Not a published contract: no other module depends on it.
+service Greeter {
+  // Unary: exercises the golden path and, for a blank name, the exception-mapping path.
+  rpc Greet(GreetRequest) returns (GreetReply);
+
+  // Server-streaming: proves the advice's exception mapping and the correlation interceptor both
+  // still work on a streaming call, not only a unary one.
+  rpc GreetEveryone(GreetManyRequest) returns (stream GreetReply);
+}
+
+message GreetRequest {
+  string name = 1;
+}
+
+message GreetManyRequest {
+  repeated string names = 1;
+}
+
+message GreetReply {
+  string message = 1;
+}

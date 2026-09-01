@@ -39,6 +39,7 @@ libs/web-support      RFC 9457 problem responses, one exception translation poin
 libs/persistence-support   auditable entities, optimistic locking, migration layout
 libs/messaging-support     the only module that knows Kafka or RabbitMQ exists
 libs/caching-support       the CacheManager built from @CacheContract - Caffeine and Redis
+libs/grpc-support          internal RPC: gRPC exception translation and correlation propagation
 libs/observability-support correlation identifier, log and metric conventions
 services/<name>       one deployable service per module
 contracts/events      published event schemas
@@ -73,6 +74,7 @@ Dependencies point inwards: adapter → application → domain. `Layer.mayDepend
 | calling another service | skill `resilience` |
 | caching a query | skill `caching`, [P-130](docs/principles/P-130-caching-contracts.md) |
 | submitting or consuming a background job | skill `task-queues`, [P-131](docs/principles/P-131-task-queues.md) |
+| calling another service internally via RPC | skill `grpc`, [P-043](docs/principles/P-043-grpc-internal-rpc.md) |
 | designing or changing an HTTP API | skill `api-design` |
 | writing tests | skill `testing` |
 | **writing any Spring code at all** | skill `spring-boot-4` — this repo is Boot 4, not 3 |

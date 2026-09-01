@@ -10,5 +10,6 @@ public enum AdapterKind {
     HTTP_CLIENT,
     CACHE,
     BLOB_STORAGE,
+    RPC,
     IN_MEMORY
 }

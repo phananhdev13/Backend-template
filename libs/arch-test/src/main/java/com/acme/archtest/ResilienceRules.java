@@ -28,8 +28,11 @@ import java.util.List;
  */
 public final class ResilienceRules {
 
-    private static final List<String> REMOTE_KINDS =
-            List.of(AdapterKind.HTTP_CLIENT.name(), AdapterKind.MESSAGING.name(), AdapterKind.CACHE.name());
+    private static final List<String> REMOTE_KINDS = List.of(
+            AdapterKind.HTTP_CLIENT.name(),
+            AdapterKind.MESSAGING.name(),
+            AdapterKind.CACHE.name(),
+            AdapterKind.RPC.name());
 
     @ArchTest
     public static final ArchRule remoteCallsDeclareTimeouts = classes()

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>backend-template</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>grpc-support</artifactId>
+
+  <name>grpc-support</name>
+  <description>Internal service-to-service RPC over Spring Boot 4.1's native gRPC starters: one
+    exception translation point (DomainException to a grpc Status, mirroring web-support's RFC
+    9457 handler), and correlation identifier propagation across the RPC hop. A service adds the
+    grpc-server starter to expose RPCs, the grpc-client starter to call another service's, or
+    both - this module wires whichever is present.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>kernel</artifactId>
+    </dependency>
+    <!-- Optional: a service that only calls out over gRPC (grpc-client only) should not have to
+         carry the server-side classes this module's exception advice needs. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-grpc-server</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- Optional for the same reason in reverse: a service with no outbound gRPC call should not
+         carry the client channel machinery. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-grpc-client</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-grpc-server-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-grpc-client-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Compiles src/test/proto into the generated client stub and service base class this
+           module's own tests exercise - the only .proto in the repository that is not a published
+           service contract, since this module has no service of its own to publish one for. -->
+      <plugin>
+        <groupId>io.github.ascopes</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <version>${protobuf-maven-plugin.version}</version>
+        <configuration>
+          <!-- This module publishes no .proto of its own - src/main has none, only the
+               throwaway src/test/proto this module's own tests exercise - so the plugin's
+               implicit main-scope "generate" execution must not fail the build for finding
+               nothing to compile. -->
+          <failOnMissingSources>false</failOnMissingSources>
+          <protoc>${protobuf-java.version}</protoc>
+          <plugins>
+            <plugin kind="binary-maven">
+              <groupId>io.grpc</groupId>
+              <artifactId>protoc-gen-grpc-java</artifactId>
+              <version>${grpc-java.version}</version>
+            </plugin>
+          </plugins>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-test</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

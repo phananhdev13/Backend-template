@@ -26,6 +26,7 @@
     <module>libs/messaging-support</module>
     <module>libs/observability-support</module>
     <module>libs/caching-support</module>
+    <module>libs/grpc-support</module>
     <module>services/order-service</module>
     <module>services/agent-factory</module>
   </modules>
@@ -55,6 +56,11 @@
     <spotbugs-maven-plugin.version>4.10.4.0</spotbugs-maven-plugin.version>
     <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
     <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+    <!-- protoc and protoc-gen-grpc-java are pinned to ${protobuf-java.version} and
+         ${grpc-java.version} at each use site - both already managed by
+         spring-boot-dependencies - never repinned here, so codegen and the gRPC runtime on the
+         classpath never disagree on wire-format details. -->
+    <protobuf-maven-plugin.version>5.1.8</protobuf-maven-plugin.version>
 
     <!-- Quality gates. Raise these as the codebase matures; never lower them silently. -->
     <jacoco.line.coverage.min>0.00</jacoco.line.coverage.min>
@@ -102,6 +108,11 @@
       <dependency>
         <groupId>com.acme</groupId>
         <artifactId>caching-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>grpc-support</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

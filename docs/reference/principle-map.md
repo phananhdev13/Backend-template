@@ -21,6 +21,7 @@ reviewing, because those are the rules that decay without anyone noticing.
 | [P-040](../principles/P-040-inbound-adapters-translate.md) | Inbound adapters translate, they do not decide | `AdapterRules.inboundAdaptersOnlyCallInputPorts`, `NamingRules.edgeDataTypesStayInAdapters`, `NamingRules.restAdaptersEndWithController` | — |
 | [P-041](../principles/P-041-outbound-adapters-one-port.md) | Outbound adapters implement exactly one port | `AdapterRules.oneAdapterPerPortPerKind`, `AdapterRules.outboundAdaptersImplementTheirDeclaredPort`, `NamingRules.outboundAdaptersEndWithAdapter`, `PortRules.everyOutputPortHasAnImplementation` | — |
 | [P-042](../principles/P-042-event-handlers-delivery-contract.md) | Event handlers are adapters with a delivery contract | _review only_ | — |
+| [P-043](../principles/P-043-grpc-internal-rpc.md) | gRPC is for internal service-to-service RPC, translated at one boundary | _review only_ | — |
 | [P-050](../principles/P-050-error-handling.md) | Failures carry domain meaning, not HTTP status | `ErrorRules.businessFailuresExtendDomainException`, `ErrorRules.domainNeverThrowsWebExceptions`, `tools/check-error-codes.sh` | — |
 | [P-051](../principles/P-051-remote-call-resilience.md) | Every remote call has a timeout, a retry policy, and a bulkhead | `ResilienceRules.remoteCallsDeclareTimeouts` | `AgentDeploymentProvisioningAdapter`, `AgentEventPublisherAdapter`, `OrderEventPublisherAdapter`, `ResilienceRules` |
 | [P-060](../principles/P-060-observability.md) | A request is followable end to end | `ObservabilityRules.loggersAreConstants`, `ObservabilityRules.oneLoggingFacade`, `ObservabilityRules.useCasesEmitTheirIdentifier` | — |
@@ -43,4 +44,5 @@ way to check one.
 
 - P-001 Progressive disclosure over exhaustive instruction
 - P-042 Event handlers are adapters with a delivery contract
+- P-043 gRPC is for internal service-to-service RPC, translated at one boundary
 - P-090 Tests are layered to match the architecture
