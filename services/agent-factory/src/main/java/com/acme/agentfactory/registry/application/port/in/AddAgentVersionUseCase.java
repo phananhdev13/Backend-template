@@ -1,5 +1,6 @@
 package com.acme.agentfactory.registry.application.port.in;
 
+import com.acme.agentfactory.registry.domain.VersionNumber;
 import com.acme.kernel.arch.InputPort;
 
 /**
@@ -12,5 +13,5 @@ import com.acme.kernel.arch.InputPort;
 @InputPort
 public interface AddAgentVersionUseCase {
 
-    int addAgentVersion(AddAgentVersionCommand command);
+    VersionNumber addAgentVersion(AddAgentVersionCommand command);
 }

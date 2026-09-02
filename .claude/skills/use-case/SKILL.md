@@ -34,9 +34,11 @@ public interface PlaceOrderUseCase {
 ```
 
 One method. Two methods are two use cases, and `UseCaseRules.inputPortsDeclareASingleOperation`
-will say so. The command is a record in the same package, carrying domain types - `Money`, not
-`BigDecimal`; `CustomerId`, not `String`. Validation that the type system can do, the type system
-should do.
+will say so. Always an interface, never a class - `UseCaseRules.inputPortsAreInterfaces` fails a
+port that is not one, because a port that is already one implementation is not a substitution
+point a test double can stand beside. The command is a record in the same package, carrying
+domain types - `Money`, not `BigDecimal`; `CustomerId`, not `String`. Validation that the type
+system can do, the type system should do.
 
 ## 2. Domain — the rules that must hold
 
@@ -58,6 +60,12 @@ public final class Order {
 No Spring, no JPA, no serialiser - the domain is `new`-able in a plain unit test, and
 `LayeringRules.domainIsFrameworkFree` keeps it that way. Take a `java.time.Clock` rather than
 calling `Instant.now()`, so time is a parameter and not a reason a test is flaky.
+
+A public method on an `@AggregateRoot`, `@DomainEntity`, `@DomainService` or `@DomainPolicy` never
+takes a bare `String`, `BigDecimal`, `UUID` or primitive number -
+`NamingRules.domainSignaturesUseValueObjects` fails it. Wrap it in a `@ValueObject` even if
+nothing validates yet; the type is what stops a transposed argument from compiling, not the
+validation inside it.
 
 Failures are `DomainException` subclasses with a stable code. Never an HTTP status: the same use
 case is reachable from a message listener where a 404 means nothing.
@@ -105,6 +113,11 @@ belongs in the domain.
 through `ApplicationEventPublisher` rather than straight to a broker is what makes the state change
 and its event commit together; see [P-072](../../../docs/principles/P-072-transactional-outbox.md) and the
 `events` skill.
+
+One aggregate's repository saved or deleted per use case -
+`UseCaseRules.oneAggregateChangedPerTransaction` fails a class whose calls reach `save`/`delete`
+on two different aggregates' repositories. A second aggregate that needs to change too is a
+reaction to the event this one just published, not a second write in the same commit.
 
 `@UseCase` carries no Spring meaning, so the service's `@ComponentScan` include filter is what
 makes these beans. That is deliberate: the application layer stays framework-free.
@@ -160,6 +173,7 @@ that buys nothing and costs seconds per case. See the `testing` skill.
 - [ ] every class carries its role annotation
 - [ ] the domain compiles without Spring on the classpath
 - [ ] each failure the specification distinguishes has its own `DomainException` code
-- [ ] `@Transactional` on the use case only
+- [ ] domain method signatures take value objects, never a bare `String`/`BigDecimal`/`UUID`/number
+- [ ] `@Transactional` on the use case only, and it saves or deletes at most one aggregate's repository
 - [ ] published events declare an `@EventContract` and have a schema in `contracts/events/`
 - [ ] `mvn -pl services/<service> -am verify` is green, architecture tests included

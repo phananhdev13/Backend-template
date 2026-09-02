@@ -9,6 +9,7 @@ import com.acme.agentfactory.registry.domain.AgentVersionStatus;
 import com.acme.agentfactory.registry.domain.ModelRef;
 import com.acme.agentfactory.registry.domain.SystemPrompt;
 import com.acme.agentfactory.registry.domain.ToolName;
+import com.acme.agentfactory.registry.domain.VersionNumber;
 import com.acme.kernel.arch.AdapterKind;
 import com.acme.kernel.arch.OutboundAdapter;
 import java.util.List;
@@ -67,7 +68,7 @@ public class JpaAgentRepositoryAdapter implements AgentRepository {
     private static List<AgentVersionEntity> toVersionEntities(AgentDefinition agent) {
         return agent.versions().stream()
                 .map(version -> new AgentVersionEntity(
-                        version.number(),
+                        version.number().value(),
                         version.model().provider(),
                         version.model().modelId(),
                         version.systemPrompt().text(),
@@ -99,7 +100,7 @@ public class JpaAgentRepositoryAdapter implements AgentRepository {
     private static AgentVersion toDomainVersion(AgentVersionEntity entity) {
         Set<ToolName> tools = entity.tools().stream().map(ToolName::new).collect(Collectors.toUnmodifiableSet());
         return AgentVersion.rehydrate(
-                entity.versionNumber(),
+                new VersionNumber(entity.versionNumber()),
                 new ModelRef(entity.provider(), entity.modelId()),
                 new SystemPrompt(entity.systemPrompt()),
                 tools,

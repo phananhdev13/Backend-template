@@ -3,7 +3,11 @@ package com.acme.archtest;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
 import com.acme.kernel.arch.AdapterKind;
+import com.acme.kernel.arch.Adr;
+import com.acme.kernel.arch.AggregateRoot;
+import com.acme.kernel.arch.DomainEntity;
 import com.acme.kernel.arch.DomainPolicy;
+import com.acme.kernel.arch.DomainService;
 import com.acme.kernel.arch.InboundAdapter;
 import com.acme.kernel.arch.InputPort;
 import com.acme.kernel.arch.OutboundAdapter;
@@ -11,11 +15,14 @@ import com.acme.kernel.arch.ReadModel;
 import com.acme.kernel.arch.UseCase;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import java.util.Set;
 
 /**
  * Names say what a thing is: P-010.
@@ -103,6 +110,83 @@ public final class NamingRules {
             .as("a domain policy says what it decides (P-022)")
             .because("a policy whose name is its only description gets reused for a second decision, "
                     + "and the two drift apart. See docs/principles/P-022-domain-services-and-policies.md");
+
+    /**
+     * Names ArchUnit cannot see: a method parameter's own name is not part of the imported model,
+     * so this checks the type only, not "a String named {@code email}". A blanket ban on these
+     * types in domain signatures is deliberately the stronger rule - see
+     * docs/principles/P-021-illegal-states-unrepresentable.md for why.
+     */
+    private static final Set<String> PRIMITIVE_ISH_TYPES = Set.of(
+            "java.lang.String",
+            "java.math.BigDecimal",
+            "java.util.UUID",
+            "int",
+            "long",
+            "double",
+            "float",
+            "short",
+            "byte",
+            "java.lang.Integer",
+            "java.lang.Long",
+            "java.lang.Double",
+            "java.lang.Float",
+            "java.lang.Short",
+            "java.lang.Byte");
+
+    @ArchTest
+    public static final ArchRule domainSignaturesUseValueObjects = classes()
+            .that(playsADomainModellingRole())
+            .should(takeNoPrimitiveIshParameters())
+            .allowEmptyShould(true)
+            .as("aggregates, entities, services and policies take value objects, not primitives (P-021)")
+            .because("reserve(String orderId, String customerId) compiles when called with the "
+                    + "arguments transposed, and the failure surfaces as a lookup that should never "
+                    + "have been reachable. reserve(OrderId, CustomerId) makes the same mistake a "
+                    + "compile error. See docs/principles/P-021-illegal-states-unrepresentable.md");
+
+    private static DescribedPredicate<JavaClass> playsADomainModellingRole() {
+        return new DescribedPredicate<>("is an @AggregateRoot, @DomainEntity, @DomainService or @DomainPolicy") {
+            @Override
+            public boolean test(JavaClass type) {
+                return Annotations.has(type, AggregateRoot.class)
+                        || Annotations.has(type, DomainEntity.class)
+                        || Annotations.has(type, DomainService.class)
+                        || Annotations.has(type, DomainPolicy.class);
+            }
+        };
+    }
+
+    private static ArchCondition<JavaClass> takeNoPrimitiveIshParameters() {
+        return new ArchCondition<>(
+                "take no String/BigDecimal/UUID/primitive-numeric parameters " + "on public methods") {
+            @Override
+            public void check(JavaClass item, ConditionEvents events) {
+                if (Annotations.has(item, Adr.class)) {
+                    return;
+                }
+                for (JavaMethod method : item.getMethods()) {
+                    if (!method.getModifiers().contains(JavaModifier.PUBLIC)
+                            || method.getName().contains("$")) {
+                        continue;
+                    }
+                    if (Annotations.hasNamed(method, Adr.class.getName())) {
+                        continue;
+                    }
+                    method.getRawParameterTypes().stream()
+                            .filter(parameterType -> PRIMITIVE_ISH_TYPES.contains(parameterType.getName()))
+                            .forEach(parameterType -> events.add(SimpleConditionEvent.violated(
+                                    item,
+                                    ("%s.%s(...) takes a %s parameter. Wrap it in a @ValueObject so an "
+                                                    + "argument transposition or an out-of-range value is a "
+                                                    + "compile error instead of a runtime bug, or add @Adr if "
+                                                    + "this one is genuinely unconstrained (a free-text note, an "
+                                                    + "opaque vendor token).")
+                                            .formatted(item.getName(), method.getName(), parameterType.getName()))));
+                }
+            }
+        };
+    }
 
     private static ArchCondition<JavaClass> stateTheirDecision() {
         return new ArchCondition<>("declare what it decides") {

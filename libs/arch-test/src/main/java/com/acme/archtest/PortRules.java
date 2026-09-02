@@ -35,6 +35,19 @@ public final class PortRules {
             "org.hibernate.");
 
     @ArchTest
+    public static final ArchRule outputPortsAreInterfaces = classes()
+            .that()
+            .areAnnotatedWith(OutputPort.class)
+            .should()
+            .beInterfaces()
+            .allowEmptyShould(true)
+            .as("an output port is an interface (P-031)")
+            .because("an outbound adapter substitutes for the port in a test only if the port is a "
+                    + "protocol rather than an implementation - a class in that position is already "
+                    + "one implementation, and a second one has to extend it instead of standing "
+                    + "beside it. See docs/principles/P-031-dependencies-point-inwards.md");
+
+    @ArchTest
     public static final ArchRule outputPortsSpeakDomainLanguage = classes()
             .that()
             .areAnnotatedWith(OutputPort.class)

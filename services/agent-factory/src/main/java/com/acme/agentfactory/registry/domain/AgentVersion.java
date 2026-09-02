@@ -18,7 +18,7 @@ import java.util.Set;
 @DomainEntity
 public final class AgentVersion {
 
-    private final int number;
+    private final VersionNumber number;
     private final ModelRef model;
     private final SystemPrompt systemPrompt;
     private final Set<ToolName> tools;
@@ -26,7 +26,7 @@ public final class AgentVersion {
     private AgentVersionStatus status;
 
     AgentVersion(
-            int number,
+            VersionNumber number,
             ModelRef model,
             SystemPrompt systemPrompt,
             Set<ToolName> tools,
@@ -52,7 +52,7 @@ public final class AgentVersion {
      * has a real API for that exception rather than a reason to reach for reflection.
      */
     public static AgentVersion rehydrate(
-            int number,
+            VersionNumber number,
             ModelRef model,
             SystemPrompt systemPrompt,
             Set<ToolName> tools,
@@ -74,7 +74,7 @@ public final class AgentVersion {
         return !systemPrompt.isBlank() || !tools.isEmpty();
     }
 
-    public int number() {
+    public VersionNumber number() {
         return number;
     }
 

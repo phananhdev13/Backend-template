@@ -53,7 +53,11 @@ public class ActivateAgentVersionService implements ActivateAgentVersionUseCase 
         AgentDefinition agent = agents.findById(id).orElseThrow(() -> NotFoundException.of("Agent", id.value()));
         agent.activateVersion(command.version());
         agents.save(agent);
-        events.publishEvent(new AgentVersionActivated(id.value(), command.version(), Instant.now(clock)));
-        log.info("UC-AGT-003 activated version agentId={} version={}", id.value(), command.version());
+        events.publishEvent(
+                new AgentVersionActivated(id.value(), command.version().value(), Instant.now(clock)));
+        log.info(
+                "UC-AGT-003 activated version agentId={} version={}",
+                id.value(),
+                command.version().value());
     }
 }

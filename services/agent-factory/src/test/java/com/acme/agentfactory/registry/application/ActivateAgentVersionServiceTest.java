@@ -10,6 +10,7 @@ import com.acme.agentfactory.registry.domain.AgentName;
 import com.acme.agentfactory.registry.domain.AgentVersionActivated;
 import com.acme.agentfactory.registry.domain.ModelRef;
 import com.acme.agentfactory.registry.domain.SystemPrompt;
+import com.acme.agentfactory.registry.domain.VersionNumber;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -61,7 +62,7 @@ class ActivateAgentVersionServiceTest {
                 FIXED);
         agents.save(agent);
 
-        service.activateVersion(new ActivateAgentVersionCommand(agent.id().value(), 1));
+        service.activateVersion(new ActivateAgentVersionCommand(agent.id().value(), new VersionNumber(1)));
 
         assertThat(saved.get(agent.id().value()).activeVersion()).isPresent();
         assertThat(published).hasSize(1);

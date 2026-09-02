@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | application |
-| **Enforced by** | `LayeringRules.dependenciesPointInwards()`, `LayeringRules.domainIsFrameworkFree()`, `PortRules.outputPortsSpeakDomainLanguage()`, `PortRules.everyOutputPortHasAnImplementation()` in `libs/arch-test` |
+| **Enforced by** | `LayeringRules.dependenciesPointInwards()`, `LayeringRules.domainIsFrameworkFree()`, `PortRules.outputPortsSpeakDomainLanguage()`, `PortRules.everyOutputPortHasAnImplementation()`, `PortRules.outputPortsAreInterfaces()` in `libs/arch-test` |
 | **Annotations** | `@OutputPort`, `@InputPort`, `@OutboundAdapter`, `@ArchRole` |
 | **Guide** | [G-020](../guides/G-020-use-case.md) |
 
@@ -130,6 +130,11 @@ type outside the domain, the JDK and the kernel — this is the rule that catche
 
 `PortRules.everyOutputPortHasAnImplementation()` fails a port with no `@OutboundAdapter` declaring
 `port = X.class`, which catches ports orphaned by a deleted adapter.
+
+`PortRules.outputPortsAreInterfaces()` fails an `@OutputPort` that is a class rather than an
+interface. Cockburn's own hexagonal architecture reasoning is that a port is a protocol a human,
+an automated test and a real adapter satisfy symmetrically - a class in that position is already
+one implementation, and a test double has to extend it rather than stand beside it.
 
 ## Deviating
 

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | domain |
-| **Enforced by** | `ValueObjectRules.valueObjectsAreImmutable()`, `ValueObjectRules.valueObjectsValidateInTheirConstructor()` (not implemented), `NamingRules.domainSignaturesUseValueObjects()` (not implemented) in `libs/arch-test` |
+| **Enforced by** | `ValueObjectRules.valueObjectsAreImmutable()`, `ValueObjectRules.valueObjectsValidateInTheirConstructor()` (not implemented), `NamingRules.domainSignaturesUseValueObjects()` in `libs/arch-test` |
 | **Annotations** | `@ValueObject`, `@AggregateRoot`, `@DomainEntity` |
 | **Guide** | [G-020](../guides/G-020-use-case.md) |
 
@@ -123,9 +123,28 @@ constrained-sounding component (`amount`, `email`, `quantity`, `percentage`) who
 constructor body is empty — a value object that validates nothing is a type alias, and its
 callers will keep checking.
 
-`NamingRules.domainSignaturesUseValueObjects()` (not implemented) fails public methods on `@AggregateRoot`,
-`@DomainService` and `@DomainPolicy` that take `String`, `BigDecimal`, `int` or `UUID`
-where a `@ValueObject` of the same name exists in the module.
+`NamingRules.domainSignaturesUseValueObjects()` fails a public method on `@AggregateRoot`,
+`@DomainEntity`, `@DomainService` or `@DomainPolicy` that takes a `String`, `BigDecimal`, `UUID`
+or primitive numeric type, unless the class or the method itself carries `@Adr`:
+
+```
+com.acme.agentfactory.registry.domain.AgentDefinition.activateVersion(...) takes a int
+parameter. Wrap it in a @ValueObject so an argument transposition or an out-of-range value is
+a compile error instead of a runtime bug, or add @Adr if this one is genuinely unconstrained
+(a free-text note, an opaque vendor token).
+See docs/principles/P-021-illegal-states-unrepresentable.md
+```
+
+This is a blanket ban rather than the "only where a same-named `@ValueObject` already exists"
+check the rule was originally specified as - a genuine limitation of the tool, not a design
+preference: ArchUnit's imported model exposes a method parameter's *type* but never its *name*
+(confirmed directly against `archunit-1.4.2.jar`'s `JavaParameter` class, which has no name
+accessor at all), so "a `String` parameter named `email`" is not something a rule can see. The
+blanket version is stricter, not weaker - it catches every primitive in a domain-role
+signature, not only the ones with a same-named wrapper already written - and this is exactly
+what caught `AgentDefinition.activateVersion(int)` and `AgentVersion.rehydrate(int, …)` still
+using a bare `int` for a version number while this rule was being built. Both now take a
+`VersionNumber`.
 
 ## Deviating
 

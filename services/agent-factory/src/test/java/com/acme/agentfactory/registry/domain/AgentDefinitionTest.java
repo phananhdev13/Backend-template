@@ -34,7 +34,7 @@ class AgentDefinitionTest {
         AgentDefinition agent = registerWithPrompt();
 
         assertThat(agent.versions()).hasSize(1);
-        assertThat(agent.versions().getFirst().number()).isEqualTo(1);
+        assertThat(agent.versions().getFirst().number()).isEqualTo(VersionNumber.first());
         assertThat(agent.versions().getFirst().status()).isEqualTo(AgentVersionStatus.DRAFT);
         assertThat(agent.activeVersion()).isEmpty();
     }
@@ -66,7 +66,7 @@ class AgentDefinitionTest {
 
         AgentVersion second = agent.addVersion(MODEL, new SystemPrompt("Revised prompt."), Set.of(), FIXED);
 
-        assertThat(second.number()).isEqualTo(2);
+        assertThat(second.number()).isEqualTo(new VersionNumber(2));
         assertThat(second.status()).isEqualTo(AgentVersionStatus.DRAFT);
         assertThat(agent.versions()).hasSize(2);
     }
@@ -77,30 +77,31 @@ class AgentDefinitionTest {
         agent.addVersion(MODEL, new SystemPrompt("v2"), Set.of(), FIXED);
         agent.addVersion(MODEL, new SystemPrompt("v3"), Set.of(), FIXED);
 
-        assertThat(agent.versions().stream().map(AgentVersion::number)).containsExactly(1, 2, 3);
+        assertThat(agent.versions().stream().map(AgentVersion::number))
+                .containsExactly(new VersionNumber(1), new VersionNumber(2), new VersionNumber(3));
     }
 
     @Test
     void activatingAVersionMakesItTheOnlyActiveOne() {
         AgentDefinition agent = registerWithPrompt();
 
-        agent.activateVersion(1);
+        agent.activateVersion(new VersionNumber(1));
 
         assertThat(agent.activeVersion()).isPresent();
-        assertThat(agent.activeVersion().orElseThrow().number()).isEqualTo(1);
+        assertThat(agent.activeVersion().orElseThrow().number()).isEqualTo(new VersionNumber(1));
     }
 
     @Test
     void activatingASecondVersionDeprecatesTheFirstRatherThanLeavingTwoActive() {
         AgentDefinition agent = registerWithPrompt();
         agent.addVersion(MODEL, new SystemPrompt("v2"), Set.of(), FIXED);
-        agent.activateVersion(1);
+        agent.activateVersion(new VersionNumber(1));
 
-        agent.activateVersion(2);
+        agent.activateVersion(new VersionNumber(2));
 
-        assertThat(agent.activeVersion().orElseThrow().number()).isEqualTo(2);
+        assertThat(agent.activeVersion().orElseThrow().number()).isEqualTo(new VersionNumber(2));
         AgentVersion first = agent.versions().stream()
-                .filter(v -> v.number() == 1)
+                .filter(v -> v.number().equals(new VersionNumber(1)))
                 .findFirst()
                 .orElseThrow();
         assertThat(first.status()).isEqualTo(AgentVersionStatus.DEPRECATED);
@@ -114,17 +115,17 @@ class AgentDefinitionTest {
     @Test
     void reactivatingTheAlreadyActiveVersionIsANoOpNotAnError() {
         AgentDefinition agent = registerWithPrompt();
-        agent.activateVersion(1);
+        agent.activateVersion(new VersionNumber(1));
 
-        agent.activateVersion(1);
+        agent.activateVersion(new VersionNumber(1));
 
-        assertThat(agent.activeVersion().orElseThrow().number()).isEqualTo(1);
+        assertThat(agent.activeVersion().orElseThrow().number()).isEqualTo(new VersionNumber(1));
     }
 
     @Test
     void activatingAVersionThatDoesNotExistIsRefused() {
         AgentDefinition agent = registerWithPrompt();
 
-        assertThatThrownBy(() -> agent.activateVersion(99)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> agent.activateVersion(new VersionNumber(99))).isInstanceOf(NotFoundException.class);
     }
 }

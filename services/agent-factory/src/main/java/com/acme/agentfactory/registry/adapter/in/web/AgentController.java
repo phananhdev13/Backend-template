@@ -11,6 +11,7 @@ import com.acme.agentfactory.registry.domain.AgentId;
 import com.acme.agentfactory.registry.domain.ModelRef;
 import com.acme.agentfactory.registry.domain.SystemPrompt;
 import com.acme.agentfactory.registry.domain.ToolName;
+import com.acme.agentfactory.registry.domain.VersionNumber;
 import com.acme.kernel.arch.AdapterKind;
 import com.acme.kernel.arch.InboundAdapter;
 import com.acme.kernel.error.NotFoundException;
@@ -69,18 +70,18 @@ public class AgentController {
     @PostMapping("/{agentId}/versions")
     ResponseEntity<AddAgentVersionResponse> addVersion(
             @PathVariable String agentId, @Valid @RequestBody AddAgentVersionRequest request) {
-        int version = addAgentVersion.addAgentVersion(new AddAgentVersionCommand(
+        VersionNumber version = addAgentVersion.addAgentVersion(new AddAgentVersionCommand(
                 agentId,
                 new ModelRef(request.provider(), request.modelId()),
                 toSystemPrompt(request.systemPrompt()),
                 toTools(request.tools())));
-        return ResponseEntity.created(URI.create("/agents/" + agentId + "/versions/" + version))
-                .body(new AddAgentVersionResponse(version));
+        return ResponseEntity.created(URI.create("/agents/" + agentId + "/versions/" + version.value()))
+                .body(new AddAgentVersionResponse(version.value()));
     }
 
     @PostMapping("/{agentId}/versions/{version}/activation")
     ResponseEntity<Void> activate(@PathVariable String agentId, @PathVariable int version) {
-        activateAgentVersion.activateVersion(new ActivateAgentVersionCommand(agentId, version));
+        activateAgentVersion.activateVersion(new ActivateAgentVersionCommand(agentId, new VersionNumber(version)));
         return ResponseEntity.noContent().build();
     }
 

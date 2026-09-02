@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | domain |
-| **Enforced by** | `AggregateRules.oneRepositoryPerAggregateRoot()`, `AggregateRules.aggregatesReferenceOtherAggregatesByIdentityOnly()`, `UseCaseRules.oneAggregateChangedPerTransaction()` (not implemented) in `libs/arch-test` |
+| **Enforced by** | `AggregateRules.oneRepositoryPerAggregateRoot()`, `AggregateRules.aggregatesReferenceOtherAggregatesByIdentityOnly()`, `UseCaseRules.oneAggregateChangedPerTransaction()` in `libs/arch-test` |
 | **Annotations** | `@AggregateRoot`, `@DomainEntity`, `@OutputPort` |
 | **Guide** | [G-020](../guides/G-020-use-case.md) |
 
@@ -110,10 +110,23 @@ See docs/principles/P-020-aggregate-consistency-boundaries.md
 `@AggregateRoot` or `@DomainEntity` whose type is another `@AggregateRoot` (or a collection
 of one).
 
-`UseCaseRules.oneAggregateChangedPerTransaction()` (not implemented) inspects `@UseCase` classes and fails
-when more than one repository `save`/`delete` is reachable inside a single `@Transactional`
-method. It is a heuristic and it can be suppressed with `@Adr`; it catches the common case
-where a second aggregate is saved "just to keep them in sync".
+`UseCaseRules.oneAggregateChangedPerTransaction()` inspects every `@UseCase` class's own method
+calls for a `save`, `delete` or `remove` reaching more than one distinct `@OutputPort` repository
+- distinct meaning two different aggregates, identified the same way
+`oneRepositoryPerAggregateRoot` already does, by the port's name minus its `Repository` suffix:
+
+```
+com.acme.orders.ordering.application.PlaceOrderService saves or deletes more than one
+aggregate's repository: [Order, Customer]. One transaction changes one aggregate; anything
+wider is a saga, not a transaction. Suppress with @Adr if the two writes are genuinely
+idempotent and must commit together.
+See docs/principles/P-020-aggregate-consistency-boundaries.md
+```
+
+It is a heuristic and it can be suppressed with `@Adr`; it catches the common case where a
+second aggregate is saved "just to keep them in sync", not every way a transaction could span
+two consistency boundaries (a repository call reached only through another class's method is
+outside what a single class's own call graph can see).
 
 ## Deviating
 

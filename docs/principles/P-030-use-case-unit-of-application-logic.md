@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | application |
-| **Enforced by** | `UseCaseRules.useCasesImplementExactlyOneInputPort()`, `UseCaseRules.useCasesCoordinateRatherThanCompute()` (not implemented), `UseCaseRules.useCasesAreTheTransactionBoundary()`, `TraceabilityRules.everyUseCaseIsDocumented()` in `libs/arch-test` |
+| **Enforced by** | `UseCaseRules.useCasesImplementExactlyOneInputPort()`, `UseCaseRules.inputPortsAreInterfaces()`, `UseCaseRules.useCasesCoordinateRatherThanCompute()` (not implemented), `UseCaseRules.useCasesAreTheTransactionBoundary()`, `TraceabilityRules.everyUseCaseIsDocumented()` in `libs/arch-test` |
 | **Annotations** | `@UseCase`, `@InputPort` |
 | **Guide** | [G-020](../guides/G-020-use-case.md) |
 
@@ -132,6 +132,12 @@ com.acme.orders.ordering.application.OrderService implements 2 @InputPort interf
 (PlaceOrder, CancelOrder). One use case, one port, one method — split the class.
 See docs/principles/P-030-use-case-unit-of-application-logic.md
 ```
+
+`UseCaseRules.inputPortsAreInterfaces()` fails an `@InputPort` that is a class rather than an
+interface - the same reasoning [P-031](P-031-dependencies-point-inwards.md) applies to output
+ports, argued from hexagonal architecture's own terms: a port is a protocol a human driving the
+system and an automated test drive symmetrically, and a class in that position is already one
+implementation rather than a substitution point.
 
 `UseCaseRules.useCasesCoordinateRatherThanCompute()` (not implemented) fails a `@UseCase` method exceeding a
 cyclomatic complexity of 5, or containing a `switch` over a domain enum. Checkstyle's

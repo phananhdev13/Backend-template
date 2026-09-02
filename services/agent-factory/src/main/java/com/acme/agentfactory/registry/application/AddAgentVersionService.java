@@ -6,6 +6,7 @@ import com.acme.agentfactory.registry.application.port.out.AgentRepository;
 import com.acme.agentfactory.registry.domain.AgentDefinition;
 import com.acme.agentfactory.registry.domain.AgentId;
 import com.acme.agentfactory.registry.domain.AgentVersion;
+import com.acme.agentfactory.registry.domain.VersionNumber;
 import com.acme.kernel.arch.UseCase;
 import com.acme.kernel.error.NotFoundException;
 import java.time.Clock;
@@ -29,12 +30,15 @@ public class AddAgentVersionService implements AddAgentVersionUseCase {
     }
 
     @Override
-    public int addAgentVersion(AddAgentVersionCommand command) {
+    public VersionNumber addAgentVersion(AddAgentVersionCommand command) {
         AgentId id = new AgentId(command.agentId());
         AgentDefinition agent = agents.findById(id).orElseThrow(() -> NotFoundException.of("Agent", id.value()));
         AgentVersion version = agent.addVersion(command.model(), command.systemPrompt(), command.tools(), clock);
         agents.save(agent);
-        log.info("UC-AGT-002 added version agentId={} version={}", id.value(), version.number());
+        log.info(
+                "UC-AGT-002 added version agentId={} version={}",
+                id.value(),
+                version.number().value());
         return version.number();
     }
 }

@@ -3,17 +3,22 @@ package com.acme.archtest;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
+import com.acme.kernel.arch.Adr;
 import com.acme.kernel.arch.InputPort;
+import com.acme.kernel.arch.OutputPort;
 import com.acme.kernel.arch.ReadModel;
 import com.acme.kernel.arch.UseCase;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The use case is the unit of application logic: P-030.
@@ -37,6 +42,21 @@ public final class UseCaseRules {
             .as("a use case implements exactly one input port (P-030)")
             .because("one entry point per use case is what keeps it a use case. "
                     + "See docs/principles/P-030-use-case-unit-of-application-logic.md");
+
+    @ArchTest
+    public static final ArchRule inputPortsAreInterfaces = classes()
+            .that()
+            .areAnnotatedWith(InputPort.class)
+            .should()
+            .beInterfaces()
+            .allowEmptyShould(true)
+            .as("an input port is an interface (P-030)")
+            .because("a port that is a concrete class cannot be substituted by a test double without "
+                    + "extending it - hexagonal architecture's own reasoning is that a port is a "
+                    + "protocol, not an implementation, so a human driving the application through it "
+                    + "and an automated test driving it the same way are symmetric adapters for the "
+                    + "same interface. A class in that position is already one implementation, not a "
+                    + "substitution point. See docs/principles/P-030-use-case-unit-of-application-logic.md");
 
     @ArchTest
     public static final ArchRule inputPortsDeclareASingleOperation = classes()
@@ -71,6 +91,50 @@ public final class UseCaseRules {
                     + "consistency invisible from the code that decides what belongs in it, and two "
                     + "such boundaries nest into one nobody designed. "
                     + "See docs/principles/P-030-use-case-unit-of-application-logic.md");
+
+    @ArchTest
+    public static final ArchRule oneAggregateChangedPerTransaction = classes()
+            .that()
+            .areAnnotatedWith(UseCase.class)
+            .should(changeAtMostOneAggregatesRepository())
+            .allowEmptyShould(true)
+            .as("a use case saves or deletes at most one aggregate's repository (P-020)")
+            .because("a transaction spanning two aggregates is the signal that a boundary is wrong, or "
+                    + "that the second change belongs in a reaction to an event rather than this commit. "
+                    + "See docs/principles/P-020-aggregate-consistency-boundaries.md");
+
+    private static ArchCondition<JavaClass> changeAtMostOneAggregatesRepository() {
+        return new ArchCondition<>("save or delete through at most one aggregate's repository") {
+            @Override
+            public void check(JavaClass item, ConditionEvents events) {
+                if (Annotations.has(item, Adr.class)) {
+                    return;
+                }
+                Set<String> aggregatesChanged = new LinkedHashSet<>();
+                for (JavaMethodCall call : item.getMethodCallsFromSelf()) {
+                    JavaClass owner = call.getTargetOwner();
+                    String methodName = call.getTarget().getName();
+                    boolean isWrite =
+                            methodName.equals("save") || methodName.equals("delete") || methodName.equals("remove");
+                    if (!isWrite
+                            || !Annotations.has(owner, OutputPort.class)
+                            || !owner.getSimpleName().endsWith("Repository")) {
+                        continue;
+                    }
+                    aggregatesChanged.add(owner.getSimpleName().replaceFirst("Repository$", ""));
+                }
+                if (aggregatesChanged.size() > 1) {
+                    events.add(SimpleConditionEvent.violated(
+                            item,
+                            ("%s saves or deletes more than one aggregate's repository: %s. One "
+                                            + "transaction changes one aggregate; anything wider is a saga, not "
+                                            + "a transaction. Suppress with @Adr if the two writes are genuinely "
+                                            + "idempotent and must commit together.")
+                                    .formatted(item.getName(), aggregatesChanged)));
+                }
+            }
+        };
+    }
 
     private static ArchCondition<JavaClass> carryAnApplicationRole() {
         return new ArchCondition<>("be a @UseCase or a @ReadModel") {

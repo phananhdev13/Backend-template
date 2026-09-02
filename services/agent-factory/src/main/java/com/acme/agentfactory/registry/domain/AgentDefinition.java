@@ -6,6 +6,7 @@ import com.acme.kernel.error.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,8 +45,8 @@ public final class AgentDefinition {
      */
     public static AgentDefinition register(
             AgentId id, AgentName name, ModelRef model, SystemPrompt systemPrompt, Set<ToolName> tools, Clock clock) {
-        AgentVersion first =
-                new AgentVersion(1, model, systemPrompt, tools, AgentVersionStatus.DRAFT, Instant.now(clock));
+        AgentVersion first = new AgentVersion(
+                VersionNumber.first(), model, systemPrompt, tools, AgentVersionStatus.DRAFT, Instant.now(clock));
         requireCapability(first);
         return new AgentDefinition(id, name, new ArrayList<>(List.of(first)));
     }
@@ -62,7 +63,11 @@ public final class AgentDefinition {
      * different configurations answer to the same identifier at different points in history.
      */
     public AgentVersion addVersion(ModelRef model, SystemPrompt systemPrompt, Set<ToolName> tools, Clock clock) {
-        int next = versions.stream().mapToInt(AgentVersion::number).max().orElse(0) + 1;
+        VersionNumber next = versions.stream()
+                .map(AgentVersion::number)
+                .max(Comparator.comparingInt(VersionNumber::value))
+                .map(VersionNumber::next)
+                .orElseGet(VersionNumber::first);
         AgentVersion version =
                 new AgentVersion(next, model, systemPrompt, tools, AgentVersionStatus.DRAFT, Instant.now(clock));
         requireCapability(version);
@@ -82,12 +87,12 @@ public final class AgentDefinition {
      * caller retrying a request they could not confirm the outcome of should see the same result
      * the first attempt would have given them.
      */
-    public void activateVersion(int number) {
+    public void activateVersion(VersionNumber number) {
         AgentVersion target = findVersion(number)
                 .orElseThrow(() -> new NotFoundException(
                         "agent-version.not-found",
-                        "Agent %s has no version %d".formatted(id.value(), number),
-                        Map.of("agentId", id.value(), "version", number)));
+                        "Agent %s has no version %d".formatted(id.value(), number.value()),
+                        Map.of("agentId", id.value(), "version", number.value())));
         if (target.status() == AgentVersionStatus.ACTIVE) {
             return;
         }
@@ -95,8 +100,8 @@ public final class AgentDefinition {
         target.activate();
     }
 
-    private Optional<AgentVersion> findVersion(int number) {
-        return versions.stream().filter(v -> v.number() == number).findFirst();
+    private Optional<AgentVersion> findVersion(VersionNumber number) {
+        return versions.stream().filter(v -> v.number().equals(number)).findFirst();
     }
 
     /** The version currently in effect, if any has ever been activated. */
@@ -123,7 +128,7 @@ public final class AgentDefinition {
             throw new BusinessRuleViolation(
                     "agent-version.no-capability",
                     "A version needs a non-blank system prompt or at least one tool",
-                    Map.of("version", version.number()));
+                    Map.of("version", version.number().value()));
         }
     }
 }
