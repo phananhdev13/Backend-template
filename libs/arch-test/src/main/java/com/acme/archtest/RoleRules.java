@@ -24,16 +24,27 @@ import java.util.Optional;
  */
 public final class RoleRules {
 
-    private static final String[] ARCHITECTURAL_PACKAGES = {"..domain..", "..application..", "..adapter..", "..config.."
-    };
-
+    /**
+     * Scoped to everything the suite imports, not to the four layer packages.
+     *
+     * <p>Restricting it to {@code ..domain..}, {@code ..application..}, {@code ..adapter..} and
+     * {@code ..config..} made the rule - and with it every rule that keys on a role or a layer -
+     * escapable by choosing a fifth package name. A class in {@code ..util..} could hold mutable
+     * state, a setter, a direct {@code Instant.now()} and a business decision, and no rule in this
+     * library would look at it, which is the opposite of what AGENTS.md's "unannotated is a build
+     * failure, not a default" promises. What a class may be is now decided by
+     * {@link Classes#exemptFromRoleAnnotation()} - a stated list of categories - rather than by
+     * where someone filed it.
+     */
     @ArchTest
     public static final ArchRule everyClassDeclaresARole = classes()
-            .that()
-            .resideInAnyPackage(ARCHITECTURAL_PACKAGES)
-            .and(not(Classes.exemptFromRoleAnnotation()))
+            .that(not(Classes.exemptFromRoleAnnotation()))
             .should(declareARole())
-            .allowEmptyShould(true)
+            // Not allowEmptyShould(true), unlike most rules here: a service with no class this
+            // applies to does not exist. An empty match means the import is misconfigured - a
+            // wrong @AnalyzeClasses package, a module that produced no classes - and every other
+            // rule in the suite is then passing for the same empty reason. See package-info.
+            .allowEmptyShould(false)
             .as("every class declares an architectural role (P-010)")
             .because("a class nobody has classified cannot be governed by any rule. "
                     + "See docs/principles/P-010-annotated-architecture.md");
@@ -42,7 +53,7 @@ public final class RoleRules {
     public static final ArchRule rolesMatchTheirPackage = classes()
             .that(Roles.withAnyRole())
             .should(resideInThePackageOfTheirLayer())
-            .allowEmptyShould(true)
+            .allowEmptyShould(false)
             .as("a class's role matches the package it lives in (P-010)")
             .because("the directory tree is the first thing a reader navigates; a use case filed under "
                     + "adapter makes it lie. See docs/principles/P-010-annotated-architecture.md");
@@ -61,7 +72,7 @@ public final class RoleRules {
     public static final ArchRule rolesAgreeOnTheirLayer = classes()
             .that(Roles.withAnyRole())
             .should(declareRolesInOneLayer())
-            .allowEmptyShould(true)
+            .allowEmptyShould(false)
             .as("a class's roles agree on the layer it is in (P-010)")
             .because("two roles placing one class in two layers leaves every layering rule to pick "
                     + "one of them arbitrarily. See docs/principles/P-010-annotated-architecture.md");

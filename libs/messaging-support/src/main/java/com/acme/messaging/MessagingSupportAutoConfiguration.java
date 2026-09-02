@@ -1,5 +1,6 @@
 package com.acme.messaging;
 
+import com.acme.kernel.event.DomainEventPublisher;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaConsumerFactoryCustomizer;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.boot.retry.RetryPolicySettings;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -53,6 +55,18 @@ public class MessagingSupportAutoConfiguration {
     @ConditionalOnMissingBean
     ContractRegistry contractRegistry(MessagingProperties properties) {
         return new ContractRegistry(properties.getBasePackages());
+    }
+
+    /**
+     * The typed publisher a use case injects instead of Spring's {@code ApplicationEventPublisher}.
+     *
+     * <p>Unconditional on any broker: a service that publishes domain events inside its own
+     * process, with no Kafka or AMQP on the classpath at all, still needs this.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    DomainEventPublisher domainEventPublisher(ApplicationEventPublisher publisher) {
+        return new ApplicationEventDomainEventPublisher(publisher);
     }
 
     /**

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | application |
-| **Enforced by** | `OutboxRules.noBrokerCallInsideATransaction()`, `OutboxRules.noBrokerCallInsideATransaction()`, `OutboxRules.eventIdIsAssignedInTheTransaction()` (not implemented) in `libs/arch-test` |
+| **Enforced by** | `OutboxRules.noBrokerCallInsideATransaction()` in `libs/arch-test`. `OutboxRules.eventIdIsAssignedInTheTransaction()` (not implemented) |
 | **Annotations** | `@UseCase`, `@OutputPort`, `@OutboundAdapter`, `@ImplementsPrinciple`, `@EventContract` |
 | **Guide** | [G-030](../guides/G-030-events.md) |
 
@@ -143,20 +143,27 @@ public OrderId place(PlaceOrderCommand command) {
 
 ## Enforcement
 
-`OutboxRules.noBrokerCallInsideATransaction()` fails any `@Transactional` method from which a
-`KafkaTemplate`, `RabbitTemplate` or `StreamBridge` call is reachable:
+`OutboxRules.noBrokerCallInsideATransaction()` fails any class in `..application..` or
+`..domain..` that depends on a type which sends: `KafkaTemplate`, `KafkaOperations`,
+`RabbitTemplate`, `AmqpTemplate`, or this repo's own `EventPublisher` and `TaskPublisher`.
 
-```
-com.acme.orders.ordering.application.PlaceOrderUseCase#place is @Transactional and calls
-org.springframework.kafka.core.KafkaTemplate#send. A rollback after a successful send
-publishes an event for state that does not exist. Publish through the outbox @OutputPort.
-See docs/principles/P-072-transactional-outbox.md
-```
+It is scoped to the layer rather than to `@UseCase`, because keying on the annotation let a use
+case delegate the send to a plain collaborator beside it — the likeliest real shape — and pass.
+`StreamBridge` is not in the list: that is Spring Cloud Stream, which
+[ADR-0004](../adr/0004-do-not-adopt-spring-cloud.md) rules out, so naming it would describe a
+dependency this repository cannot have.
 
-`OutboxRules.noBrokerCallInsideATransaction()` fails an `@OutboundAdapter` implementing
-the event-publishing port whose `kind()` is `MESSAGING` rather than `PERSISTENCE` — the
-publisher the application calls must write to the database; only the relay talks to the
-broker.
+The types are named individually rather than by package, and that matters in both directions: a
+ban on `org.springframework.kafka..` would also catch `@KafkaListener` on a *consumer*, where
+receiving inside a transaction is the correct mark-then-act shape
+([P-071](P-071-idempotency.md)).
+
+**The relay is not caught by this, and must not be.** `OrderEventPublisherAdapter` is an
+`@OutboundAdapter(kind = MESSAGING)` that genuinely talks to the broker — that is its job. It
+runs on `@ApplicationModuleListener`, after the commit, which is the second half of the outbox.
+An earlier version of this document claimed the rule failed exactly that adapter for being
+`MESSAGING` rather than `PERSISTENCE`; it does not, and it should not, because Modulith's
+publication registry is the outbox table and the relay is the process that drains it.
 
 `OutboxRules.eventIdIsAssignedInTheTransaction()` (not implemented) fails a relay that generates an event id
 per send attempt, which would defeat consumer de-duplication.

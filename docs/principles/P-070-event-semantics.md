@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | domain |
-| **Enforced by** | `EventContractRules.compactedStreamsCarryStateSnapshots()`, `EventContractRules.partitionKeyExistsOnRecord()`, `EventContractRules.everyContractHasASchemaFile()`, `EventContractRules.orderingPromisesRequireAKey()`, `EventContractRules.unboundedChoicesAreJustified()` in `libs/arch-test` |
+| **Enforced by** | `EventContractRules.compactedStreamsCarryStateSnapshots()`, `EventContractRules.partitionKeyExistsOnRecord()`, `EventContractRules.everyContractHasASchemaFile()`, `EventContractRules.orderingPromisesRequireAKey()`, `EventContractRules.unboundedChoicesAreJustified()`, `EventContractRules.schemaFilesAgreeWithTheirContract()`, `EventContractRules.eventsArePublishedThroughTheTypedPublisher()` in `libs/arch-test` |
 | **Annotations** | `@EventContract`, `@DomainEvent`, `@Adr` |
 | **Guide** | [G-030](../guides/G-030-events.md) |
 

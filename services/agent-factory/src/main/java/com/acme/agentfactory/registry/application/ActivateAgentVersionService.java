@@ -12,6 +12,7 @@ import com.acme.kernel.arch.UseCase;
 import com.acme.kernel.cache.CacheBackend;
 import com.acme.kernel.cache.CacheContract;
 import com.acme.kernel.error.NotFoundException;
+import com.acme.kernel.event.DomainEventPublisher;
 import io.micrometer.observation.annotation.Observed;
 import java.time.Clock;
 import java.time.Instant;
@@ -19,7 +20,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -35,14 +35,11 @@ public class ActivateAgentVersionService implements ActivateAgentVersionUseCase 
 
     private final AgentRepository agents;
     private final AgentAuthorizationPort authorization;
-    private final ApplicationEventPublisher events;
+    private final DomainEventPublisher events;
     private final Clock clock;
 
     public ActivateAgentVersionService(
-            AgentRepository agents,
-            AgentAuthorizationPort authorization,
-            ApplicationEventPublisher events,
-            Clock clock) {
+            AgentRepository agents, AgentAuthorizationPort authorization, DomainEventPublisher events, Clock clock) {
         this.agents = agents;
         this.authorization = authorization;
         this.events = events;
@@ -71,8 +68,7 @@ public class ActivateAgentVersionService implements ActivateAgentVersionUseCase 
         AgentDefinition agent = agents.findById(id).orElseThrow(() -> NotFoundException.of("Agent", id.value()));
         agent.activateVersion(command.version());
         agents.save(agent);
-        events.publishEvent(
-                new AgentVersionActivated(id.value(), command.version().value(), Instant.now(clock)));
+        events.publish(new AgentVersionActivated(id.value(), command.version().value(), Instant.now(clock)));
         log.info(
                 "UC-AGT-003 activated version agentId={} version={}",
                 id.value(),

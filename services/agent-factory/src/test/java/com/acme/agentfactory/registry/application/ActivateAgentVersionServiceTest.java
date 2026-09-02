@@ -14,6 +14,8 @@ import com.acme.agentfactory.registry.domain.ModelRef;
 import com.acme.agentfactory.registry.domain.NotPermitted;
 import com.acme.agentfactory.registry.domain.SystemPrompt;
 import com.acme.agentfactory.registry.domain.VersionNumber;
+import com.acme.kernel.event.DomainEvent;
+import com.acme.kernel.event.DomainEventPublisher;
 import com.acme.kernel.security.Actor;
 import java.time.Clock;
 import java.time.Instant;
@@ -25,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
 
 /** Proves activation both persists the change and announces it - the two things UC-AGT-003 promises. */
 class ActivateAgentVersionServiceTest {
@@ -33,7 +34,7 @@ class ActivateAgentVersionServiceTest {
     private static final Clock FIXED = Clock.fixed(Instant.parse("2026-08-30T10:00:00Z"), ZoneOffset.UTC);
 
     private final Map<String, AgentDefinition> saved = new HashMap<>();
-    private final List<Object> published = new ArrayList<>();
+    private final List<DomainEvent> published = new ArrayList<>();
 
     private final AgentRepository agents = new AgentRepository() {
         @Override
@@ -52,7 +53,7 @@ class ActivateAgentVersionServiceTest {
         }
     };
 
-    private final ApplicationEventPublisher events = published::add;
+    private final DomainEventPublisher events = published::add;
     private static final Actor ADMIN = new Actor("svc-account-1", "svc-account-1", Set.of("agent-admin"));
 
     private AgentAuthorizationPort authorization = (actor, agentId) -> true;

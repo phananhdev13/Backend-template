@@ -40,6 +40,13 @@ public final class Annotations {
                 .findFirst();
     }
 
+    /** The annotation on {@code type} addressed by its fully qualified name. */
+    public static Optional<JavaAnnotation<JavaClass>> findNamed(JavaClass type, String annotationFullName) {
+        return type.getAnnotations().stream()
+                .filter(a -> a.getRawType().getFullName().equals(annotationFullName))
+                .findFirst();
+    }
+
     /** Whether {@code method} carries the given annotation, addressed by its fully qualified name. */
     public static boolean hasNamed(JavaMethod method, String annotationFullName) {
         return findNamed(method, annotationFullName).isPresent();

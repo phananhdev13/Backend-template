@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | adapter |
-| **Enforced by** | `NamingRules.edgeDataTypesStayInAdapters()`, `EventContractRules.everyContractHasASchemaFile()` in `libs/arch-test`; `tools/check-error-codes.sh` in CI; each service's own `OpenApiContractTest` diffs its generated OpenAPI document against `contracts/api/`. Judging whether a change is additive is still _review only_ |
+| **Enforced by** | `NamingRules.edgeDataTypesStayInAdapters()`, `EventContractRules.everyContractHasASchemaFile()`, `EventContractRules.schemaFilesAgreeWithTheirContract()` in `libs/arch-test`; `tools/check-error-codes.sh` in CI; each service's own `OpenApiContractTest` diffs its generated OpenAPI document against `contracts/api/`. Judging whether a change is additive is still _review only_ |
 | **Annotations** | `@InboundAdapter`, `@PublicApi`, `@EventContract` |
 | **Guide** | [G-070](../guides/G-070-api.md) |
 

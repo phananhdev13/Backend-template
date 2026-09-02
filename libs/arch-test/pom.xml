@@ -27,5 +27,13 @@
       <groupId>com.tngtech.archunit</groupId>
       <artifactId>archunit-junit5</artifactId>
     </dependency>
+    <!-- Event contracts are declared twice - on the annotation, and in the checked-in JSON
+         schema consumers in other repositories generate from. EventContractRules reads the
+         second to hold it to the first, which needs a parser. Jackson 3, the version Boot 4.1
+         manages, so this adds no new version to any service's test classpath. -->
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
   </dependencies>
 </project>

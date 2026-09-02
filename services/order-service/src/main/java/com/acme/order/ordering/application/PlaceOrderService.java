@@ -1,6 +1,7 @@
 package com.acme.order.ordering.application;
 
 import com.acme.kernel.arch.UseCase;
+import com.acme.kernel.event.DomainEventPublisher;
 import com.acme.order.ordering.application.port.in.PlaceOrderCommand;
 import com.acme.order.ordering.application.port.in.PlaceOrderUseCase;
 import com.acme.order.ordering.application.port.out.OrderRepository;
@@ -15,7 +16,6 @@ import java.time.Clock;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
  * rule appeared here instead, a second caller reaching the same aggregate would not get it, and the
  * two paths would drift apart quietly.
  *
- * <p>The event goes to {@link ApplicationEventPublisher}, not to a broker. Spring Modulith records
+ * <p>The event goes to {@link DomainEventPublisher}, not to a broker. Spring Modulith records
  * the pending publication in this same transaction and delivers after it commits. Sending straight
  * to Kafka here would publish "order placed" for an order that a later constraint violation rolls
  * back - a message no consumer can un-see.
@@ -37,12 +37,12 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     private static final Logger log = LoggerFactory.getLogger(PlaceOrderService.class);
 
     private final OrderRepository orders;
-    private final ApplicationEventPublisher events;
+    private final DomainEventPublisher events;
     private final DiscountPolicy discountPolicy;
     private final Clock clock;
 
     public PlaceOrderService(
-            OrderRepository orders, ApplicationEventPublisher events, DiscountPolicy discountPolicy, Clock clock) {
+            OrderRepository orders, DomainEventPublisher events, DiscountPolicy discountPolicy, Clock clock) {
         this.orders = orders;
         this.events = events;
         this.discountPolicy = discountPolicy;
@@ -68,7 +68,7 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         Span.current().setAttribute("orderId", order.id().value().toString());
 
         var total = order.total(discountPolicy);
-        events.publishEvent(new OrderPlaced(
+        events.publish(new OrderPlaced(
                 order.id().value(),
                 order.customerId().value(),
                 total.amount(),

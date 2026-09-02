@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | application |
-| **Enforced by** | `ReadModelRules.readModelsHaveNoSideEffects()`, `ReadModelRules.readModelsHaveNoSideEffects()`, `TraceabilityRules.everyReadModelIsDocumented()` in `libs/arch-test` |
+| **Enforced by** | `ReadModelRules.readModelsHaveNoSideEffects()`, `ReadModelRules.readModelsAreReadOnly()`, `ReadModelRules.readModelsDoNotBorrowTheWriteSide()`, `TraceabilityRules.everyReadModelIsDocumented()` in `libs/arch-test` |
 | **Annotations** | `@ReadModel`, `@UseCase`, `@OutputPort` |
 | **Guide** | [G-040](../guides/G-040-persistence.md) |
 
@@ -119,9 +119,9 @@ state.
 
 ## Enforcement
 
-`ReadModelRules.readModelsHaveNoSideEffects()` fails a `@ReadModel` that calls a method
-named `save`, `delete`, `update`, `publish` or `record` on any injected collaborator, holds
-mutable state, or carries `@Transactional` without `readOnly = true`:
+`ReadModelRules.readModelsHaveNoSideEffects()` fails a `@ReadModel` that calls a method whose
+name begins with `save`, `delete`, `remove`, `insert`, `update`, `persist`, `merge`, `publish`,
+`send`, `store` or `record` on any collaborator:
 
 ```
 com.acme.orders.ordering.application.OrderSummaryQuery calls AuditLog#record.
@@ -130,11 +130,20 @@ inbound adapter or promote this to a @UseCase.
 See docs/principles/P-032-reads-and-writes-shaped-separately.md
 ```
 
-`ReadModelRules.readModelsHaveNoSideEffects()` fails a `@ReadModel` that depends on a
-repository `@OutputPort` or returns an `@AggregateRoot` type.
+`ReadModelRules.readModelsAreReadOnly()` fails a `@ReadModel` with a non-final instance field,
+or one carrying `@Transactional` without `readOnly = true` on the class or on any method. The
+second is not only tidiness: `readOnly = true` is what lets Hibernate skip dirty checking and a
+replica take the query, so omitting it gives up both silently.
+
+`ReadModelRules.readModelsDoNotBorrowTheWriteSide()` fails a `@ReadModel` that depends on a
+repository `@OutputPort`, or that returns an `@AggregateRoot` — directly or inside an
+`Optional`/`List`. A projection that loads through the write side re-imports the mapping and the
+lazy loading the separate read path existed to avoid; one that returns an aggregate makes the
+write model the read contract, so every change to it becomes an API change.
 
 `TraceabilityRules.everyReadModelIsDocumented()` resolves `id()` against
-`docs/read-models/QRY-ORD-004-*.md`, on the same terms as
+`docs/use-cases/QRY-ORD-001-*.md` — the same directory as use cases, because a query is an
+operation with a specification like any other — on the same terms as
 [P-030](P-030-use-case-unit-of-application-logic.md).
 
 ## Deviating

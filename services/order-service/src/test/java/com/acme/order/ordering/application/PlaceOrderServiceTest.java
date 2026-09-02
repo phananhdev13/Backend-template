@@ -2,6 +2,8 @@ package com.acme.order.ordering.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.acme.kernel.event.DomainEvent;
+import com.acme.kernel.event.DomainEventPublisher;
 import com.acme.order.ordering.application.port.in.PlaceOrderCommand;
 import com.acme.order.ordering.application.port.out.OrderRepository;
 import com.acme.order.ordering.domain.CustomerId;
@@ -21,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * Orchestration, with the ports substituted.
@@ -35,7 +36,7 @@ class PlaceOrderServiceTest {
     private static final Clock FIXED = Clock.fixed(Instant.parse("2026-08-30T10:00:00Z"), ZoneOffset.UTC);
 
     private final Map<String, Order> saved = new HashMap<>();
-    private final List<Object> published = new ArrayList<>();
+    private final List<DomainEvent> published = new ArrayList<>();
 
     private final OrderRepository orders = new OrderRepository() {
         @Override
@@ -49,7 +50,7 @@ class PlaceOrderServiceTest {
         }
     };
 
-    private final ApplicationEventPublisher events = published::add;
+    private final DomainEventPublisher events = published::add;
 
     private final PlaceOrderService service = new PlaceOrderService(
             orders, events, new DiscountPolicy(Money.of("500.00", "EUR"), new BigDecimal("0.05")), FIXED);

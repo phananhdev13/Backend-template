@@ -60,14 +60,21 @@ caps throughput at one consumer, and needs an `@Adr`.
 
 ## Publishing
 
-Publish through `ApplicationEventPublisher`, not to a broker. Spring Modulith's event publication
-registry writes the pending publication in the **same transaction** as the state change, and
-delivers after commit. Without that, a broker send between a save and a commit produces an event
-for a state change that then rolls back.
+Publish through `DomainEventPublisher` (`com.acme.kernel.event`), not to a broker. Spring
+Modulith's event publication registry writes the pending publication in the **same transaction**
+as the state change, and delivers after commit. Without that, a broker send between a save and a
+commit produces an event for a state change that then rolls back.
+
+`DomainEventPublisher` rather than Spring's own `ApplicationEventPublisher`, and the difference is
+the argument type: `publishEvent` takes an `Object`, so a plain record with no `@EventContract`
+could be published and every rule in `EventContractRules` - all of which key on `DomainEvent` -
+would miss it. `publish` takes a `DomainEvent`, so that is a compile error instead
+(`EventContractRules.eventsArePublishedThroughTheTypedPublisher`). The delivery mechanism is
+unchanged: the implementation in `messaging-support` delegates to `ApplicationEventPublisher`.
 
 ```java
 // in the use case
-events.publishEvent(new OrderPlaced(order.id().value(), order.total(), Instant.now(clock)));
+events.publish(new OrderPlaced(order.id().value(), order.total(), Instant.now(clock)));
 ```
 
 ```java
@@ -175,6 +182,6 @@ startup rather than degrading quietly to age-based retention.
 - [ ] retention matches the payload kind
 - [ ] schema file exists under `contracts/events/` and matches the record
 - [ ] handlers of at-least-once streams are `@Idempotent` with a key stable across retries
-- [ ] published from a use case via `ApplicationEventPublisher`, never straight to a broker
+- [ ] published from a use case via `DomainEventPublisher`, never straight to a broker
 - [ ] a dead-letter destination exists and someone looks at it
 - [ ] `INFINITE`, `GLOBAL` or compacted personal data carries an `@Adr`

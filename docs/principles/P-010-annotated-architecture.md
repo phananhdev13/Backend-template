@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | cross-cutting |
-| **Enforced by** | `RoleRules.everyClassDeclaresARole()`, `RoleRules.rolesMatchTheirPackage()` in `libs/arch-test` |
+| **Enforced by** | `RoleRules.everyClassDeclaresARole()`, `RoleRules.rolesMatchTheirPackage()`, `RoleRules.rolesAgreeOnTheirLayer()` in `libs/arch-test` |
 | **Annotations** | `@ArchRole`, `@AggregateRoot`, `@DomainEntity`, `@ValueObject`, `@DomainPolicy`, `@DomainService`, `@UseCase`, `@InputPort`, `@OutputPort`, `@ReadModel`, `@InboundAdapter`, `@OutboundAdapter`, `@EventHandler`, `@ArchConfig` |
 | **Guide** | [G-010](../guides/G-010-new-service.md) |
 

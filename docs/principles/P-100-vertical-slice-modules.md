@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | cross-cutting |
-| **Enforced by** | `BoundaryRules.internalTypesStayInTheirModule()`, `BoundaryRules.crossModuleTypesArePublicApi()`, `BoundaryRules.noCyclesBetweenModules()`, Spring Modulith `ApplicationModules.verify()` |
+| **Enforced by** | `BoundaryRules.internalTypesStayInTheirModule()`, `BoundaryRules.crossModuleTypesArePublicApi()`, `BoundaryRules.noCyclesBetweenModules()`, Spring Modulith `ApplicationModules.verify()`, in each service's `ModularityTest` |
 | **Annotations** | `@PublicApi`, `@Internal`, `@ArchRole` |
 | **Guide** | [G-010](../guides/G-010-new-service.md) |
 
@@ -106,19 +106,17 @@ Verification is a test, so a breach fails the build:
 ```java
 class ModularityTest {
 
-    static final ApplicationModules MODULES = ApplicationModules.of(OrderServiceApplication.class);
+    private static final ApplicationModules MODULES = ApplicationModules.of(OrderServiceApplication.class);
 
     @Test
-    void modules_are_acyclic_and_respect_declared_dependencies() {
+    void modulesAreAcyclicAndRespectTheirDeclaredDependencies() {
         MODULES.verify();
-    }
-
-    @Test
-    void documentation_is_regenerated() {
-        new Documenter(MODULES).writeDocumentation();     // docs/reference/modules/
     }
 }
 ```
+
+Each service carries exactly that file. `ApplicationModules.of` reads bytecode rather than
+starting a context, so it costs a fraction of a second and needs no container.
 
 Wrong — a direct reach into another module's storage:
 
