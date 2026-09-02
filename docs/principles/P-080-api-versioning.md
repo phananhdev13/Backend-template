@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | adapter |
-| **Enforced by** | `NamingRules.edgeDataTypesStayInAdapters()`, `EventContractRules.everyContractHasASchemaFile()` in `libs/arch-test`; `tools/check-error-codes.sh` in CI. Endpoint versioning and response additivity are _review only_ |
+| **Enforced by** | `NamingRules.edgeDataTypesStayInAdapters()`, `EventContractRules.everyContractHasASchemaFile()` in `libs/arch-test`; `tools/check-error-codes.sh` in CI; each service's own `OpenApiContractTest` diffs its generated OpenAPI document against `contracts/api/`. Judging whether a change is additive is still _review only_ |
 | **Annotations** | `@InboundAdapter`, `@PublicApi`, `@EventContract` |
 | **Guide** | [G-070](../guides/G-070-api.md) |
 
@@ -145,10 +145,44 @@ repository has nothing to generate from.
 `NamingRules.edgeDataTypesStayInAdapters()` keeps `…Request` and `…Response` types out of the
 domain, which is what stops the wire format becoming the model.
 
-**Response additivity and endpoint versioning are review-only.** Deciding whether a change is
-additive needs the previous published shape and a judgement about what clients tolerate; a rule
-that guessed would either block safe changes or wave through breaking ones. What the build gives
-you instead is the diff: the OpenAPI document is generated, so a reviewer sees exactly what moved.
+**Every service's `OpenApiContractTest` fails when `contracts/api/<service>.openapi.json` stops
+matching what the controllers actually produce.** `springdoc` inspects the live request mappings,
+so the document cannot be derived statically the way `contracts/errors/registry.json` is - the
+test fetches `/v3/api-docs` from a real `MockMvc`-driven Spring context and compares it,
+pretty-printed, against the checked-in file:
+
+```
+contracts/api/order-service.openapi.json is stale: the controllers now produce a different
+contract. A freshly generated copy was written to target/openapi/order-service.openapi.json -
+review the diff, then replace contracts/api/order-service.openapi.json with it.
+```
+
+That failure is not itself a verdict on whether the change is additive - it only proves the file
+was stale and needed a human to look at the diff before it could be accepted, which is what makes
+the diff a reliable place to look. `libs/web-support`'s `OpenApiInfoAutoConfiguration` names the
+document after the service (`info.title`) instead of springdoc's identical, useless default
+("OpenAPI definition", version "v0") for every service, which is what makes two services'
+contracts distinguishable at all once both are checked in.
+
+**Two things the generated document does not tell you, confirmed by generating one for real
+rather than assumed from springdoc's own documentation:**
+
+- A response's status code defaults to `200` regardless of what the controller actually returns
+  at runtime - `ResponseEntity.created(...)` still documents as `200` unless the method carries
+  an explicit `@ApiResponse(responseCode = "201", ...)`. The checked-in contract is only as
+  accurate as the annotations on the controller; an unannotated `201` or `404` is invisible to it.
+- Spring MVC 4.1's native endpoint versioning (`@GetMapping(version = "2")`) collapses every
+  version of one path into a *single* OpenAPI operation, adding an `X-API-Version` header
+  parameter enumerating the supported values rather than emitting one operation per version -
+  confirmed by generating a document for two `@GetMapping` methods on the same path with
+  different `version` values. If two versions genuinely return different response shapes, the
+  merged operation's response schema reflects only one of them; the contract test cannot catch
+  that, because both versions are equally "the generated document" as far as it can tell. Review
+  a versioned endpoint's diff with this in mind.
+
+**Deciding whether a change is additive is still review-only**, and stays that way: it needs the
+previous published shape and a judgement about what clients tolerate, which is exactly what the
+contract test's diff puts in front of a reviewer rather than deciding for them.
 
 ## Deviating
 
@@ -160,3 +194,8 @@ something you do not deploy calls it.
 A security fix that must break a contract breaks it. Ship it, record the decision in an
 `@Adr` with the compatibility analysis and the notification you sent, and treat the ADR as
 the audit trail.
+
+A service with no HTTP surface at all - a pure event consumer, a worker with only a task queue -
+has no `springdoc` dependency and no `OpenApiContractTest`; `OpenApiInfoAutoConfiguration` stays
+inert (`@ConditionalOnClass`) and there is no `contracts/api/<service>.openapi.json` to maintain,
+because there is no REST contract to maintain it against.

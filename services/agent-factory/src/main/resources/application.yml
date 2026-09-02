@@ -43,6 +43,12 @@ spring:
       use:
         header: X-API-Version
 
+# Without this, an endpoint that declares no explicit `produces` shows as "*/*" in the
+# generated OpenAPI document - technically accurate (content negotiation happens at runtime)
+# but useless to a client generator, which needs one concrete media type to generate against.
+springdoc:
+  default-produces-media-type: application/json
+
 acme:
   messaging:
     stream-prefix: ${STREAM_PREFIX:acme}

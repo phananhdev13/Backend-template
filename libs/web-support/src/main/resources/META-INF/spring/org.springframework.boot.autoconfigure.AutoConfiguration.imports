@@ -1,1 +1,2 @@
 com.acme.web.WebSupportAutoConfiguration
+com.acme.web.OpenApiInfoAutoConfiguration

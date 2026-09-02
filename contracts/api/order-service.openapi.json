@@ -1,0 +1,174 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "order-service",
+    "description" : "Generated from this service's controllers - never hand-edited. See docs/principles/P-080-api-versioning.md",
+    "version" : "1.0"
+  },
+  "servers" : [ {
+    "url" : "http://localhost",
+    "description" : "Generated server url"
+  } ],
+  "paths" : {
+    "/orders" : {
+      "get" : {
+        "tags" : [ "order-controller" ],
+        "operationId" : "forCustomer",
+        "parameters" : [ {
+          "name" : "customerId",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 50
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/OrderSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "order-controller" ],
+        "operationId" : "place",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlaceOrderRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlaceOrderResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{orderId}" : {
+      "get" : {
+        "tags" : [ "order-controller" ],
+        "operationId" : "byId",
+        "parameters" : [ {
+          "name" : "orderId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrderSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "Line" : {
+        "type" : "object",
+        "properties" : {
+          "sku" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "quantity" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 0
+          },
+          "unitPrice" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "sku", "unitPrice" ]
+      },
+      "PlaceOrderRequest" : {
+        "type" : "object",
+        "properties" : {
+          "customerId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "currency" : {
+            "type" : "string",
+            "maxLength" : 3,
+            "minLength" : 3
+          },
+          "lines" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Line"
+            },
+            "minItems" : 1
+          }
+        },
+        "required" : [ "currency", "customerId", "lines" ]
+      },
+      "PlaceOrderResponse" : {
+        "type" : "object",
+        "properties" : {
+          "orderId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "OrderSummary" : {
+        "type" : "object",
+        "properties" : {
+          "orderId" : {
+            "type" : "string"
+          },
+          "customerId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "subtotal" : {
+            "type" : "number"
+          }
+        }
+      }
+    }
+  }
+}

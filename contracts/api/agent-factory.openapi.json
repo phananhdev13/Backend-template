@@ -1,0 +1,250 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "agent-factory",
+    "description" : "Generated from this service's controllers - never hand-edited. See docs/principles/P-080-api-versioning.md",
+    "version" : "1.0"
+  },
+  "servers" : [ {
+    "url" : "http://localhost",
+    "description" : "Generated server url"
+  } ],
+  "paths" : {
+    "/agents" : {
+      "get" : {
+        "tags" : [ "agent-controller" ],
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "limit",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 50
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AgentSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "agent-controller" ],
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterAgentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RegisterAgentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents/{agentId}/versions" : {
+      "post" : {
+        "tags" : [ "agent-controller" ],
+        "operationId" : "addVersion",
+        "parameters" : [ {
+          "name" : "agentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddAgentVersionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AddAgentVersionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents/{agentId}/versions/{version}/activation" : {
+      "post" : {
+        "tags" : [ "agent-controller" ],
+        "operationId" : "activate",
+        "parameters" : [ {
+          "name" : "agentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "version",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/agents/{agentId}" : {
+      "get" : {
+        "tags" : [ "agent-controller" ],
+        "operationId" : "byId",
+        "parameters" : [ {
+          "name" : "agentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AgentSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "RegisterAgentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "provider" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "modelId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "systemPrompt" : {
+            "type" : "string"
+          },
+          "tools" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "modelId", "name", "provider" ]
+      },
+      "RegisterAgentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "agentId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AddAgentVersionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "provider" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "modelId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "systemPrompt" : {
+            "type" : "string"
+          },
+          "tools" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "modelId", "provider" ]
+      },
+      "AddAgentVersionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "AgentSummary" : {
+        "type" : "object",
+        "properties" : {
+          "agentId" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "activeVersion" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "versionCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      }
+    }
+  }
+}

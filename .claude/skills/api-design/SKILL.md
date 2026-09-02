@@ -100,8 +100,44 @@ Cursor-based, not offset. Offset pagination re-scans rows and skips or repeats i
 underlying data changes between pages. Return `nextCursor` and let the client pass it back; always
 cap page size server-side.
 
-## Contract
+## Contract: OpenAPI, generated and checked in
 
-`springdoc-openapi` generates the specification from the controllers. Keep it generated - a
-hand-maintained spec is wrong within a month. Consumers in other repositories generate from the
-published contract, not from reading your source.
+`springdoc-openapi-starter-webmvc-ui` generates the specification from the live controllers -
+never hand-maintain one, it is wrong within a month. Each service checks its generated document
+into `contracts/api/<service>.openapi.json`, proven current by that service's own
+`OpenApiContractTest`: the test fetches `/v3/api-docs` from a real `MockMvc`-driven context and
+fails if it no longer matches the checked-in file, the same shape `contracts/errors/registry.json`
+already uses for error codes, adapted for a contract that can only be produced by a running
+context, not derived by scanning source.
+
+```
+contracts/api/order-service.openapi.json is stale: the controllers now produce a different
+contract. A freshly generated copy was written to target/openapi/order-service.openapi.json -
+review the diff, then replace contracts/api/order-service.openapi.json with it.
+```
+
+That failure is not a verdict on whether the change was safe - only a reviewer looking at the
+diff can judge that (see Versioning, above). It is what makes the diff exist to look at.
+
+`libs/web-support`'s `OpenApiInfoAutoConfiguration` sets `info.title` from
+`spring.application.name`; without it, springdoc's default (`"OpenAPI definition"`, version
+`"v0"`) is identical for every service, useless once more than one contract is checked in.
+`springdoc.default-produces-media-type: application/json` in `application.yml` is what keeps an
+endpoint with no explicit `produces` from documenting as `*/*` - accurate about content
+negotiation, useless to a client generator that needs one concrete media type.
+
+**Two limitations, confirmed by generating a document, not assumed:**
+
+- A response's status code documents as `200` unless the method carries an explicit
+  `@ApiResponse(responseCode = "201", ...)` - `ResponseEntity.created(...)`'s real runtime status
+  is invisible to springdoc without one. Annotate a non-200 response if the contract needs to say
+  so.
+- Spring MVC 4.1's native `@GetMapping(version = "2")` collapses every version of one path into a
+  single OpenAPI operation with an `X-API-Version` header parameter enumerating the versions,
+  not one operation per version. If two versions return different response shapes, the merged
+  operation's schema reflects only one of them - the contract test proves the file matches what
+  springdoc produces, not that a versioned endpoint's documentation is complete. Review those by
+  hand.
+
+A service with no HTTP surface has no `springdoc` dependency, no generated document, and nothing
+in `contracts/api/` - there is no contract to keep current.
