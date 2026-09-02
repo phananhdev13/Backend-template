@@ -41,7 +41,8 @@ import tools.jackson.databind.json.JsonMapper;
         properties = {
             "acme.messaging.auto-provision=false",
             "spring.kafka.bootstrap-servers=localhost:59092",
-            "spring.rabbitmq.listener.simple.missing-queues-fatal=false"
+            "spring.rabbitmq.listener.simple.missing-queues-fatal=false",
+            AgentSecurityTestExclusions.PROPERTY
         })
 class OpenApiContractTest {
 

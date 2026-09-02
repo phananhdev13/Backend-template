@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.acme.agentfactory.AgentSecurityTestExclusions;
 import com.acme.agentfactory.registry.application.AgentSummaryQuery;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,13 @@ import org.testcontainers.utility.DockerImageName;
             // Rabbit container this test does have, and a @RabbitListener container's queue check
             // is fatal by default, unlike Boot's own non-fatal KafkaAdmin topic creation. This test
             // is not about the task queue; it only needs the listener to not crash the context.
-            "spring.rabbitmq.listener.simple.missing-queues-fatal=false"
+            "spring.rabbitmq.listener.simple.missing-queues-fatal=false",
+            // Not about Keycloak or OPA either - KeycloakResourceServerIntegrationTest and
+            // OpaAuthorizationIntegrationTest in security-support already prove those for real;
+            // ActivateAgentVersionServiceAuthorizationIntegrationTest proves them wired together
+            // for this service's own activation endpoint. Excluding both here, not only setting
+            // permitAll, is what keeps this test needing no live Keycloak or OPA to run at all.
+            AgentSecurityTestExclusions.PROPERTY
         })
 class RegisterAgentIntegrationTest {
 

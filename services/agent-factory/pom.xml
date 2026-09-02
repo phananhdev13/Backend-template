@@ -25,6 +25,11 @@
       <groupId>com.acme</groupId>
       <artifactId>web-support</artifactId>
     </dependency>
+    <!-- Keycloak authentication + the OPA sidecar client, for UC-AGT-003's activation demo. -->
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>security-support</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.acme</groupId>
       <artifactId>persistence-support</artifactId>

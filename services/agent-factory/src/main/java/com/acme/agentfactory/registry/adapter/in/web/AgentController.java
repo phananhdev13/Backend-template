@@ -15,12 +15,14 @@ import com.acme.agentfactory.registry.domain.VersionNumber;
 import com.acme.kernel.arch.AdapterKind;
 import com.acme.kernel.arch.InboundAdapter;
 import com.acme.kernel.error.NotFoundException;
+import com.acme.security.Actors;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -80,8 +82,10 @@ public class AgentController {
     }
 
     @PostMapping("/{agentId}/versions/{version}/activation")
-    ResponseEntity<Void> activate(@PathVariable String agentId, @PathVariable int version) {
-        activateAgentVersion.activateVersion(new ActivateAgentVersionCommand(agentId, new VersionNumber(version)));
+    ResponseEntity<Void> activate(
+            @PathVariable String agentId, @PathVariable int version, Authentication authentication) {
+        activateAgentVersion.activateVersion(
+                new ActivateAgentVersionCommand(agentId, new VersionNumber(version), Actors.from(authentication)));
         return ResponseEntity.noContent().build();
     }
 

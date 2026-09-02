@@ -36,6 +36,11 @@
       </dependency>
       <dependency>
         <groupId>com.acme</groupId>
+        <artifactId>security-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
         <artifactId>persistence-support</artifactId>
         <version>${revision}</version>
       </dependency>

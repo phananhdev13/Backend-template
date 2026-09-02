@@ -2,10 +2,12 @@ package com.acme.agentfactory.registry.application;
 
 import com.acme.agentfactory.registry.application.port.in.ActivateAgentVersionCommand;
 import com.acme.agentfactory.registry.application.port.in.ActivateAgentVersionUseCase;
+import com.acme.agentfactory.registry.application.port.out.AgentAuthorizationPort;
 import com.acme.agentfactory.registry.application.port.out.AgentRepository;
 import com.acme.agentfactory.registry.domain.AgentDefinition;
 import com.acme.agentfactory.registry.domain.AgentId;
 import com.acme.agentfactory.registry.domain.AgentVersionActivated;
+import com.acme.agentfactory.registry.domain.NotPermitted;
 import com.acme.kernel.arch.UseCase;
 import com.acme.kernel.cache.CacheBackend;
 import com.acme.kernel.cache.CacheContract;
@@ -13,6 +15,7 @@ import com.acme.kernel.error.NotFoundException;
 import io.micrometer.observation.annotation.Observed;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -31,11 +34,17 @@ public class ActivateAgentVersionService implements ActivateAgentVersionUseCase 
     private static final Logger log = LoggerFactory.getLogger(ActivateAgentVersionService.class);
 
     private final AgentRepository agents;
+    private final AgentAuthorizationPort authorization;
     private final ApplicationEventPublisher events;
     private final Clock clock;
 
-    public ActivateAgentVersionService(AgentRepository agents, ApplicationEventPublisher events, Clock clock) {
+    public ActivateAgentVersionService(
+            AgentRepository agents,
+            AgentAuthorizationPort authorization,
+            ApplicationEventPublisher events,
+            Clock clock) {
         this.agents = agents;
+        this.authorization = authorization;
         this.events = events;
         this.clock = clock;
     }
@@ -52,6 +61,13 @@ public class ActivateAgentVersionService implements ActivateAgentVersionUseCase 
     @Observed(name = "usecase.activate-agent-version", contextualName = "UC-AGT-003")
     public void activateVersion(ActivateAgentVersionCommand command) {
         AgentId id = new AgentId(command.agentId());
+        if (!authorization.canActivateVersion(command.actor(), id)) {
+            throw new NotPermitted(
+                    "agent.activation-not-permitted",
+                    "Actor %s may not activate versions of agent %s"
+                            .formatted(command.actor().subject(), id.value()),
+                    Map.of("agentId", id.value()));
+        }
         AgentDefinition agent = agents.findById(id).orElseThrow(() -> NotFoundException.of("Agent", id.value()));
         agent.activateVersion(command.version());
         agents.save(agent);

@@ -30,6 +30,7 @@ An ADR is never edited to change its decision. It is superseded by a new one, an
 | [0018](0018-timescaledb-extension-for-time-series-data.md) | TimescaleDB as a Postgres extension, not a separate time-series database | Accepted | 2026-09-02 | — |
 | [0019](0019-otel-javaagent-for-tracing-micrometer-for-metrics.md) | The OpenTelemetry Java agent for tracing; Micrometer stays the metrics pipeline | Accepted | 2026-09-02 | — |
 | [0020](0020-shedlock-and-quartz-for-distributed-cron.md) | ShedLock and Quartz's clustered JobStore for distributed cron; Temporal's native cron when a service already runs Temporal | Accepted | 2026-09-02 | — |
+| [0021](0021-keycloak-sso-and-opa-as-the-standard-authorization-sidecar.md) | Keycloak for platform SSO; OPA as the standard authorization sidecar | Accepted | 2026-09-02 | — |
 
 Statuses are `Proposed`, `Accepted`, `Superseded` or `Rejected`. A rejected ADR stays in the
 index: the fact that an option was considered and refused is the part worth keeping.

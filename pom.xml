@@ -22,6 +22,7 @@
     <module>libs/kernel</module>
     <module>libs/arch-test</module>
     <module>libs/web-support</module>
+    <module>libs/security-support</module>
     <module>libs/persistence-support</module>
     <module>libs/messaging-support</module>
     <module>libs/observability-support</module>
@@ -102,6 +103,11 @@
       <dependency>
         <groupId>com.acme</groupId>
         <artifactId>web-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>security-support</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

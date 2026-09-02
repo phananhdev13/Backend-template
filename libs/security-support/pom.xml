@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>backend-template</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>security-support</artifactId>
+
+  <name>security-support</name>
+  <description>Authentication at the edge, for an OpenID Connect identity provider (Keycloak):
+    a stateless OAuth2 resource server filter chain, method security so @PreAuthorize on a
+    @UseCase actually runs, RFC 9457 problem responses for authentication and authorisation
+    failures matching web-support's own shape, and Actors.from(...) - the one place a
+    validated Jwt becomes the framework-free Actor a use case actually reads. See
+    docs/principles/P-120-security-at-use-case-boundary.md.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>kernel</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>web-support</artifactId>
+    </dependency>
+    <!-- Not spring-boot-starter-oauth2-resource-server: Boot 4.1 deprecated it in favour of
+         this one (confirmed by reading its own POM description) - both resolve to the same
+         spring-boot-starter-security + spring-boot-security-oauth2-resource-server today, but
+         only this name is not scheduled for removal. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+    </dependency>
+    <!-- The OPA sidecar decision client: a declarative @HttpExchange, same as any other
+         outbound HTTP dependency per the resilience skill - not a bespoke RestTemplate. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-restclient</artifactId>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

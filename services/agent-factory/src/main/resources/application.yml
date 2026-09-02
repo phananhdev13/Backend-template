@@ -44,6 +44,23 @@ spring:
       default: 1
       use:
         header: X-API-Version
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/acme}
+          authority-prefix: "ROLE_"
+          # Keycloak puts realm roles under realm_access.roles, not the flat "scope" claim Boot
+          # assumes by default - see libs/security-support's own Javadoc for why this is
+          # ['realm_access']['roles'], not claims['realm_access']['roles'].
+          authorities-claim-expressions:
+            - "['realm_access']['roles']"
+  http:
+    serviceclient:
+      opa:
+        base-url: ${OPA_BASE_URL:http://localhost:8181/v1/data/acme/authz/allow}
+        connect-timeout: 500ms
+        read-timeout: 1s
 
 # Without this, an endpoint that declares no explicit `produces` shows as "*/*" in the
 # generated OpenAPI document - technically accurate (content negotiation happens at runtime)

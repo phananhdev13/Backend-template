@@ -148,6 +148,33 @@ ResponseEntity<Void> cancel(@PathVariable UUID id, @RequestParam UUID customerId
 }
 ```
 
+## The platform's concrete mechanism
+
+`Actor`, `Actors.from(...)` and the shape above are no longer illustrative - they are real,
+built and verified. Every service authenticates against this platform's Keycloak realm and, where
+authorisation depends on more than a role, asks Open Policy Agent (OPA). See
+[ADR-0021](../adr/0021-keycloak-sso-and-opa-as-the-standard-authorization-sidecar.md) for the
+full reasoning and the empirical findings (a Keycloak SpEL gotcha, a realm-import filename
+requirement, OPA's exact REST contract) behind each piece below.
+
+**Authentication**: `libs/security-support`'s `SecuritySupportAutoConfiguration` is a stateless
+OAuth2 resource server for this platform's Keycloak realm. `com.acme.kernel.security.Actor` is
+the real value object every `@Command` carries; `com.acme.security.Actors.from(authentication)`
+is the real, and only, place a `JwtAuthenticationToken` becomes one. A service depending on
+`security-support` must set `spring.security.oauth2.resourceserver.jwt.issuer-uri` and
+`authorities-claim-expressions` (Keycloak's `realm_access.roles` needs the latter) - see the
+`security` skill for the exact properties and the SpEL expression that must be used.
+
+**Authorisation against a remote policy engine**: `com.acme.security.opa.OpaAuthorization`,
+also in `security-support`, is the fail-closed OPA client this principle's own "choose on
+purpose" guidance below asks for. A service calls it from inside its own `@UseCase`, behind its
+own `@OutputPort` and `@OutboundAdapter(kind = AdapterKind.HTTP_CLIENT)` - never from
+`@PreAuthorize` SpEL, for the same reason ownership checks never go in SpEL either. See
+`services/agent-factory`'s `AgentAuthorizationPort` / `OpaAgentAuthorizationAdapter` /
+`ActivateAgentVersionService` for the real, working shape, and
+`ActivateAgentVersionAuthorizationIntegrationTest` for it proven end to end against a real
+Keycloak and a real OPA.
+
 ## Enforcement
 
 **Requiring an annotation on every use case is review-only, and the reason matters.** A rule that
@@ -183,4 +210,8 @@ Where authorisation depends on a remote policy engine, keep the call in the use 
 an `@OutputPort`, give it a timeout and a fail-closed default
 ([P-051](P-051-remote-call-resilience.md)), and record the availability trade-off in an
 `@Adr` — a policy service outage that fails open is a breach, and one that fails closed is an
-outage. Choose on purpose.
+outage. Choose on purpose. **This is no longer hypothetical**: OPA is this platform's standard
+remote policy engine ([ADR-0021](../adr/0021-keycloak-sso-and-opa-as-the-standard-authorization-sidecar.md)),
+`OpaAuthorization` in `security-support` already fails closed by default, and
+`services/agent-factory`'s `OpaAgentAuthorizationAdapter` is the real `@OutboundAdapter` to
+copy.

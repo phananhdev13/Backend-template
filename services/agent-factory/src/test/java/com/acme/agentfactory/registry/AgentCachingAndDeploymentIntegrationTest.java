@@ -2,11 +2,16 @@ package com.acme.agentfactory.registry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.acme.agentfactory.AgentSecurityTestExclusions;
 import com.acme.agentfactory.registry.application.AgentSummaryQuery;
+import com.acme.agentfactory.registry.application.port.out.AgentAuthorizationPort;
 import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,7 +20,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -48,7 +57,8 @@ import tools.jackson.databind.ObjectMapper;
             "acme.messaging.rabbit.retry-initial-interval-ms=50",
             "acme.messaging.rabbit.retry-multiplier=1.0",
             "acme.messaging.rabbit.retry-max-interval-ms=50",
-            "spring.kafka.bootstrap-servers=localhost:59092"
+            "spring.kafka.bootstrap-servers=localhost:59092",
+            AgentSecurityTestExclusions.PROPERTY
         })
 class AgentCachingAndDeploymentIntegrationTest {
 
@@ -77,6 +87,21 @@ class AgentCachingAndDeploymentIntegrationTest {
     @Autowired
     private JdbcClient jdbc;
 
+    // Security is excluded from this context entirely (AgentSecurityTestExclusions) - this test
+    // is about caching and the task queue, not Keycloak or OPA, and both are already proven for
+    // real elsewhere (KeycloakResourceServerIntegrationTest, OpaAuthorizationIntegrationTest,
+    // ActivateAgentVersionAuthorizationIntegrationTest). Authorization still has to answer
+    // something for activation to proceed at all, so it is stubbed rather than left unreachable.
+    @MockitoBean
+    private AgentAuthorizationPort authorization;
+
+    private static final JwtAuthenticationToken CACHE_DEMO_PRINCIPAL = new JwtAuthenticationToken(
+            Jwt.withTokenValue("test-token")
+                    .header("alg", "none")
+                    .claim("sub", "cache-demo-actor")
+                    .build(),
+            List.of(new SimpleGrantedAuthority("ROLE_agent-admin")));
+
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test
@@ -99,6 +124,7 @@ class AgentCachingAndDeploymentIntegrationTest {
                 .getContentAsString();
         JsonNode json = JSON.readTree(response);
         String agentId = json.get("agentId").asText();
+        given(authorization.canActivateVersion(any(), any())).willReturn(true);
 
         assertThat(summaries.byId(agentId)).isPresent();
 
@@ -110,7 +136,8 @@ class AgentCachingAndDeploymentIntegrationTest {
                 .as("byId's answer is cached under the agent's id")
                 .isNotNull();
 
-        mockMvc.perform(post("/agents/{agentId}/versions/{version}/activation", agentId, 1))
+        mockMvc.perform(post("/agents/{agentId}/versions/{version}/activation", agentId, 1)
+                        .principal(CACHE_DEMO_PRINCIPAL))
                 .andExpect(status().isNoContent());
 
         await().atMost(Duration.ofSeconds(5))

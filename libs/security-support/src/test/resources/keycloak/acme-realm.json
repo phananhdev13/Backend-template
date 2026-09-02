@@ -1,0 +1,33 @@
+{
+  "realm": "acme",
+  "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      { "name": "agent-admin" },
+      { "name": "agent-viewer" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "security-support-test",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "test-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "authorizationServicesEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-security-support-test",
+      "enabled": true,
+      "serviceAccountClientId": "security-support-test",
+      "realmRoles": ["agent-admin"]
+    }
+  ]
+}

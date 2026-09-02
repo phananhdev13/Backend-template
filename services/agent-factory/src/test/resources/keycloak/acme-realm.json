@@ -1,0 +1,51 @@
+{
+  "realm": "acme",
+  "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      { "name": "agent-admin" },
+      { "name": "agent-viewer" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "agent-factory-admin",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "admin-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "authorizationServicesEnabled": false
+    },
+    {
+      "clientId": "agent-factory-viewer",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "viewer-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "authorizationServicesEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-agent-factory-admin",
+      "enabled": true,
+      "serviceAccountClientId": "agent-factory-admin",
+      "realmRoles": ["agent-admin"]
+    },
+    {
+      "username": "service-account-agent-factory-viewer",
+      "enabled": true,
+      "serviceAccountClientId": "agent-factory-viewer",
+      "realmRoles": ["agent-viewer"]
+    }
+  ]
+}
