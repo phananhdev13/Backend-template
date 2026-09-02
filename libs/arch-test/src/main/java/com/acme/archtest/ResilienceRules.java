@@ -11,7 +11,6 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
-import java.util.List;
 
 /**
  * Every call that can hang has an answer for what happens when it does: P-051.
@@ -28,12 +27,12 @@ import java.util.List;
  */
 public final class ResilienceRules {
 
-    private static final List<String> REMOTE_KINDS = List.of(
-            AdapterKind.HTTP_CLIENT.name(),
-            AdapterKind.MESSAGING.name(),
-            AdapterKind.CACHE.name(),
-            AdapterKind.RPC.name(),
-            AdapterKind.BLOB_STORAGE.name());
+    // Which kinds are remote is AdapterKind.isRemote()'s answer, not a copy of it kept here: a
+    // list in this file went stale the moment a constant was added to the enum, and the new kind
+    // then escaped this rule with nothing to notice.
+    private static boolean isRemote(String kind) {
+        return !kind.isBlank() && AdapterKind.valueOf(kind).isRemote();
+    }
 
     @ArchTest
     public static final ArchRule remoteCallsDeclareTimeouts = classes()
@@ -53,7 +52,7 @@ public final class ResilienceRules {
             public void check(JavaClass item, ConditionEvents events) {
                 Annotations.find(item, OutboundAdapter.class).ifPresent(adapter -> {
                     String kind = Annotations.enumName(adapter, "kind", "");
-                    if (!REMOTE_KINDS.contains(kind)) {
+                    if (!isRemote(kind)) {
                         return;
                     }
                     boolean claimed = Annotations.find(item, ImplementsPrinciple.class)

@@ -42,8 +42,20 @@ public final class Annotations {
 
     /** Whether {@code method} carries the given annotation, addressed by its fully qualified name. */
     public static boolean hasNamed(JavaMethod method, String annotationFullName) {
+        return findNamed(method, annotationFullName).isPresent();
+    }
+
+    /**
+     * The annotation on {@code method} addressed by its fully qualified name.
+     *
+     * <p>Addressing by name rather than by {@code Class} is what lets a rule inspect a framework
+     * annotation - {@code @Cacheable}, {@code @PreAuthorize} - that {@code libs/arch-test} must
+     * not put on its own compile classpath.
+     */
+    public static Optional<JavaAnnotation<JavaMethod>> findNamed(JavaMethod method, String annotationFullName) {
         return method.getAnnotations().stream()
-                .anyMatch(a -> a.getRawType().getFullName().equals(annotationFullName));
+                .filter(a -> a.getRawType().getFullName().equals(annotationFullName))
+                .findFirst();
     }
 
     /** A string member, falling back to {@code fallback} when absent. */

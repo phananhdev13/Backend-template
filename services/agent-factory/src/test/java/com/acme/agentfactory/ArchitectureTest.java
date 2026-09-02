@@ -2,6 +2,7 @@ package com.acme.agentfactory;
 
 import com.acme.archtest.AdapterRules;
 import com.acme.archtest.AggregateRules;
+import com.acme.archtest.BlobStorageRules;
 import com.acme.archtest.BoundaryRules;
 import com.acme.archtest.CacheContractRules;
 import com.acme.archtest.ConfigRules;
@@ -22,6 +23,7 @@ import com.acme.archtest.TaskContractRules;
 import com.acme.archtest.TraceabilityRules;
 import com.acme.archtest.UseCaseRules;
 import com.acme.archtest.ValueObjectRules;
+import com.acme.archtest.WorkflowRules;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -106,4 +108,10 @@ class ArchitectureTest {
 
     @ArchTest
     static final ArchTests scheduling = ArchTests.in(SchedulingRules.class);
+
+    @ArchTest
+    static final ArchTests workflows = ArchTests.in(WorkflowRules.class);
+
+    @ArchTest
+    static final ArchTests blobStorage = ArchTests.in(BlobStorageRules.class);
 }

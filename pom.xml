@@ -88,8 +88,9 @@
     <dependencies>
       <!-- Modules of this repo. platform/bom re-publishes this same list for
            consumers outside the reactor; it cannot be imported here because it
-           inherits from this pom. Keep the two lists in step - ArchUnit test
-           PlatformBomCoversAllLibrariesTest fails the build if they drift. -->
+           inherits from this pom. Keep the two lists in step -
+           libs/arch-test's PlatformBomCoversAllLibrariesTest fails the build
+           if they drift. -->
       <dependency>
         <groupId>com.acme</groupId>
         <artifactId>kernel</artifactId>

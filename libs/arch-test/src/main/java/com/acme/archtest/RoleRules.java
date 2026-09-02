@@ -47,7 +47,51 @@ public final class RoleRules {
             .because("the directory tree is the first thing a reader navigates; a use case filed under "
                     + "adapter makes it lie. See docs/principles/P-010-annotated-architecture.md");
 
+    /**
+     * A class may carry more than one role - {@code @EventHandler} with
+     * {@code @InboundAdapter(MESSAGING)} is the intended pairing for a listener - but they must
+     * place it in the same layer.
+     *
+     * <p>Without this, {@code Roles.layerOf} had to pick one of several by iteration order over a
+     * {@code Set}, so {@code rolesMatchTheirPackage} and {@code dependenciesPointInwards} could
+     * reach different verdicts on the same code. Requiring agreement makes the question have one
+     * answer rather than making the tie-break deterministic and still arbitrary.
+     */
+    @ArchTest
+    public static final ArchRule rolesAgreeOnTheirLayer = classes()
+            .that(Roles.withAnyRole())
+            .should(declareRolesInOneLayer())
+            .allowEmptyShould(true)
+            .as("a class's roles agree on the layer it is in (P-010)")
+            .because("two roles placing one class in two layers leaves every layering rule to pick "
+                    + "one of them arbitrarily. See docs/principles/P-010-annotated-architecture.md");
+
     private RoleRules() {}
+
+    private static ArchCondition<JavaClass> declareRolesInOneLayer() {
+        return new ArchCondition<>("declare roles that agree on one layer") {
+            @Override
+            public void check(JavaClass item, ConditionEvents events) {
+                var byLayer = Roles.roleAnnotationsOf(item).stream()
+                        .collect(java.util.stream.Collectors.groupingBy(
+                                role -> Annotations.find(role, com.acme.kernel.arch.ArchRole.class)
+                                        .map(archRole -> Annotations.enumName(archRole, "layer", Layer.DOMAIN.name()))
+                                        .orElse(Layer.DOMAIN.name()),
+                                java.util.TreeMap::new,
+                                java.util.stream.Collectors.mapping(
+                                        JavaClass::getSimpleName, java.util.stream.Collectors.toList())));
+                if (byLayer.size() <= 1) {
+                    return;
+                }
+                events.add(SimpleConditionEvent.violated(
+                        item,
+                        ("%s carries roles from more than one layer: %s. Every layering rule then has "
+                                        + "to guess which one governs it. Keep the roles that agree and "
+                                        + "split the rest into their own class.")
+                                .formatted(item.getName(), byLayer)));
+            }
+        };
+    }
 
     private static ArchCondition<JavaClass> declareARole() {
         return new ArchCondition<>("declare an architectural role") {

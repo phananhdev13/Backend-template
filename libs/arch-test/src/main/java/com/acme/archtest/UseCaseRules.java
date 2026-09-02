@@ -8,6 +8,8 @@ import com.acme.kernel.arch.InputPort;
 import com.acme.kernel.arch.OutputPort;
 import com.acme.kernel.arch.ReadModel;
 import com.acme.kernel.arch.UseCase;
+import com.acme.kernel.event.EventHandler;
+import com.acme.kernel.task.TaskHandler;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.domain.JavaModifier;
@@ -80,10 +82,17 @@ public final class UseCaseRules {
             .because("depending on the implementation makes the port decorative and defeats substitution "
                     + "in tests. See docs/principles/P-031-dependencies-point-inwards.md");
 
+    /**
+     * {@code @Transactional} is meta-annotated for both a type and a method, and this rule used to
+     * select on the type only - so {@code @Transactional} on a repository adapter's {@code save}
+     * method, the most natural place to put it and exactly the boundary P-030 forbids, was never
+     * examined. Selecting on either placement is what makes "and nowhere else" true.
+     */
     @ArchTest
     public static final ArchRule useCasesAreTheTransactionBoundary = classes()
             .that()
             .areAnnotatedWith(SPRING_TRANSACTIONAL)
+            .or(Classes.haveAMethodAnnotatedWith(SPRING_TRANSACTIONAL))
             .should(carryAnApplicationRole())
             .allowEmptyShould(true)
             .as("transactions begin at the use case and nowhere else (P-030)")
@@ -137,9 +146,17 @@ public final class UseCaseRules {
     }
 
     private static ArchCondition<JavaClass> carryAnApplicationRole() {
-        return new ArchCondition<>("be a @UseCase or a @ReadModel") {
+        return new ArchCondition<>("be a @UseCase, a @ReadModel, or a message handler marking a delivery") {
             @Override
             public void check(JavaClass item, ConditionEvents events) {
+                // A message handler is the one adapter that legitimately opens a transaction, and
+                // P-071's mark-then-act shape is why: the delivery ledger write and the use case
+                // call have to commit together, or a rebalance between them loses the work and a
+                // crash between them repeats it. The handler still may not DO the work - that is
+                // AdapterRules.inboundAdaptersOnlyCallInputPorts - it may only bracket it.
+                if (Annotations.has(item, EventHandler.class) || Annotations.has(item, TaskHandler.class)) {
+                    return;
+                }
                 if (Annotations.has(item, UseCase.class) || Annotations.has(item, ReadModel.class)) {
                     return;
                 }

@@ -192,13 +192,19 @@ Every use case states who may invoke it, or records an exemption with @Adr.
 See docs/principles/P-120-security-at-use-case-boundary.md
 ```
 
-`SecurityRules.noAuthorisationInAdapters()` fails `@PreAuthorize`, `@Secured` or
-`@RolesAllowed` on an `@InboundAdapter` or `@EventHandler` method — the check is one layer in,
-where all transports meet.
+`SecurityRules.noAuthorisationInAdapters()` fails `@PreAuthorize`, `@PostAuthorize`,
+`@PreFilter`, `@PostFilter`, `@Secured`, `@RolesAllowed`, `@PermitAll` or `@DenyAll` on an
+`@InboundAdapter` or `@EventHandler` — on the class or on any of its methods. The check belongs
+one layer in, where all transports meet.
 
-`SecurityRules.domainNeverReadsSecurityContext()` fails any `Layer.DOMAIN` or
-`Layer.APPLICATION` reference to `SecurityContextHolder`, `Authentication` or `Jwt`; identity
-arrives as an `Actor` value object.
+`SecurityRules.domainNeverReadsSecurityContext()` fails any `..domain..` or `..application..`
+reference to `SecurityContextHolder`, `Authentication`, `Jwt` or `JwtAuthenticationToken`;
+identity arrives as an `Actor` value object.
+
+It names those four types rather than the whole `org.springframework.security` tree on purpose:
+a `@UseCase` may carry `@PreAuthorize` for the coarse, declarative check above, and banning the
+package would ban that with it. The domain's blanket ban on frameworks is a separate rule,
+`DomainRules.domainDependsOnlyOnDomain()`.
 
 ## Deviating
 

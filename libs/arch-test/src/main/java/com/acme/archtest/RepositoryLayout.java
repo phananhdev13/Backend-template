@@ -38,12 +38,23 @@ public final class RepositoryLayout {
         return Files.exists(root().resolve(relativePath));
     }
 
-    /** Whether a document matching {@code <directory>/<idPrefix>*.md} exists. */
-    public static boolean documentExists(String directory, String idPrefix) {
+    /**
+     * Whether a document named {@code <directory>/<id>-*.md} exists.
+     *
+     * <p>The separator is required, and that is the whole point: a bare {@code startsWith} let a
+     * truncated identifier resolve against its neighbour, so {@code @UseCase(id = "U")} was
+     * satisfied by {@code UC-AGT-001-….md}, {@code @Adr("ADR-0")} by {@code 0001-….md}, and
+     * {@code @ImplementsPrinciple("P")} by {@code P-000-….md}. Every traceability rule reads
+     * through here, so a half-deleted identifier passed all of them - and {@code @Adr} is the
+     * sanctioned suppression for several other rules, which made a suppression pointing at no
+     * real decision record acceptable too.
+     */
+    public static boolean documentExists(String directory, String id) {
         Path dir = root().resolve(directory);
-        if (!Files.isDirectory(dir)) {
+        if (!Files.isDirectory(dir) || id.isBlank()) {
             return false;
         }
+        String idPrefix = id + "-";
         try (var entries = Files.list(dir)) {
             // Path.getFileName() is declared to return null for a zero-element path (a root),
             // which a listing of a real directory's entries never produces - but the type says

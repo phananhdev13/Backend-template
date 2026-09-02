@@ -96,20 +96,52 @@ public final class CacheContractRules {
     }
 
     private static ArchCondition<JavaMethod> carryARealSpringCacheAnnotation() {
-        return new ArchCondition<>("carry a Spring Cache annotation") {
+        return new ArchCondition<>("carry a Spring Cache annotation naming the same cache") {
             @Override
             public void check(JavaMethod item, ConditionEvents events) {
-                boolean wired = SPRING_CACHE_ANNOTATIONS.stream().anyMatch(name -> Annotations.hasNamed(item, name));
-                if (wired) {
+                List<JavaAnnotation<JavaMethod>> springAnnotations = SPRING_CACHE_ANNOTATIONS.stream()
+                        .map(name -> Annotations.findNamed(item, name))
+                        .flatMap(java.util.Optional::stream)
+                        .toList();
+                if (springAnnotations.isEmpty()) {
+                    events.add(SimpleConditionEvent.violated(
+                            item,
+                            "%s declares @CacheContract but no @Cacheable, @CachePut or @CacheEvict. "
+                                            .formatted(item.getFullName())
+                                    + "Add one naming the same cache, or remove the contract."));
                     return;
                 }
-                events.add(SimpleConditionEvent.violated(
-                        item,
-                        "%s declares @CacheContract but no @Cacheable, @CachePut or @CacheEvict. "
-                                        .formatted(item.getFullName())
-                                + "Add one naming the same cache, or remove the contract."));
+                // Presence was all this rule used to check, so the two names could disagree. A
+                // @Cacheable naming a cache no contract declared gets no TTL and no declared
+                // backend - the runtime has to refuse it, and this catches it a build earlier.
+                String declared = Annotations.find(item, CacheContract.class)
+                        .map(contract -> Annotations.string(contract, "name", ""))
+                        .orElse("");
+                for (JavaAnnotation<JavaMethod> spring : springAnnotations) {
+                    List<String> named = springCacheNames(spring);
+                    if (named.isEmpty() || named.contains(declared)) {
+                        continue;
+                    }
+                    events.add(SimpleConditionEvent.violated(
+                            item,
+                            ("%s declares @CacheContract(name = \"%s\") but its @%s names %s. The "
+                                            + "contract governs the cache Spring actually uses only when "
+                                            + "the two names are the same one.")
+                                    .formatted(
+                                            item.getFullName(),
+                                            declared,
+                                            spring.getRawType().getSimpleName(),
+                                            named)));
+                }
             }
         };
+    }
+
+    /** The cache names a Spring cache annotation asks for, from either spelling of the member. */
+    private static List<String> springCacheNames(JavaAnnotation<JavaMethod> annotation) {
+        List<String> names = new java.util.ArrayList<>(Annotations.strings(annotation, "cacheNames"));
+        names.addAll(Annotations.strings(annotation, "value"));
+        return names;
     }
 
     private static ArchCondition<JavaMethod> justifyDistributedPersonalData() {

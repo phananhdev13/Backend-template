@@ -19,7 +19,9 @@ whether it can be a rule instead.
 
 | | |
 |---|---|
-| Full gate, as CI runs it | `mvn verify` |
+| Full gate, as CI runs it | `mvn verify && tools/check-all.sh` |
+| Compile, lint, architecture and tests | `mvn verify` |
+| Documentation, contract and migration gate | `tools/check-all.sh` |
 | Fast inner loop (skips lint) | `mvn -Pfast verify` |
 | Format everything | `mvn spotless:apply` |
 | One module and its dependencies | `mvn -pl services/order-service -am verify` |
@@ -28,6 +30,10 @@ whether it can be a rule instead.
 | Coverage report | `mvn verify -Pcoverage` |
 
 Run `mvn spotless:apply` before you commit. The formatter owns formatting; do not hand-format.
+
+`tools/check-all.sh` is the half of the gate Maven cannot run: it reads the documentation tree and
+git history rather than compiled classes. Green under `mvn verify` alone does not mean green in
+CI — run both.
 
 ## Layout
 

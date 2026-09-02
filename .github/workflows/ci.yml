@@ -1,8 +1,9 @@
 name: CI
 
-# The gate is the same one `mvn verify` runs locally, plus the checks that cannot live in Maven
-# because they read git history or the documentation tree. Nothing here is allowed to be looser
-# than the local build: a developer who is green locally should be green here.
+# The gate is `mvn verify` plus `tools/check-all.sh` - the checks that cannot live in Maven
+# because they read git history or the documentation tree. Both halves are runnable locally and
+# named as such in AGENTS.md, so that green locally and green here mean the same thing. Nothing
+# here may be stricter than what a developer can run before pushing.
 
 on:
   push:
@@ -41,28 +42,12 @@ jobs:
       - name: Build, lint, architecture and tests
         run: mvn $MAVEN_ARGS verify
 
-      - name: Documentation references resolve
+      # One script rather than five steps, so that "the gate CI runs" is a thing a developer or an
+      # agent can run in one command locally - see AGENTS.md. Splitting it here made the local and
+      # CI gates silently different.
+      - name: Documentation, contract and migration gate
         if: always()
-        run: tools/check-doc-links.sh
-
-      - name: Claimed rules exist
-        if: always()
-        run: tools/check-rule-references.sh
-
-      - name: Error codes match the registry
-        if: always()
-        run: tools/check-error-codes.sh
-
-      - name: Migrations are immutable and non-destructive
-        if: always()
-        run: tools/check-migrations.sh
-
-      - name: Principle map is up to date
-        if: always()
-        run: |
-          tools/principle-map.sh
-          git diff --exit-code docs/reference/principle-map.md \
-            || { echo "::error::docs/reference/principle-map.md is stale. Run tools/principle-map.sh and commit the result."; exit 1; }
+        run: tools/check-all.sh
 
       - name: Upload test reports
         if: failure()

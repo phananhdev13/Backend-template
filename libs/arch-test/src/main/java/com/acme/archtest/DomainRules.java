@@ -3,6 +3,7 @@ package com.acme.archtest;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.acme.kernel.arch.DomainPolicy;
+import com.acme.kernel.arch.DomainService;
 import com.acme.kernel.arch.OutputPort;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
@@ -79,16 +80,25 @@ public final class DomainRules {
                     + "cannot arrange, and makes behaviour depend on when the suite runs. Inject a "
                     + "java.time.Clock. See docs/principles/P-021-illegal-states-unrepresentable.md");
 
+    /**
+     * P-022 says of domain services and domain policies alike: "Neither may touch a port, a
+     * repository or a framework", and spends a section on why a domain service injecting a
+     * repository is the failure. This rule used to cover only {@code @DomainPolicy}, which made
+     * {@code @DomainService} the strictly weaker annotation - a developer who wanted a port in
+     * domain logic got it by picking the other word, and the build agreed.
+     */
     @ArchTest
-    public static final ArchRule policiesAreSideEffectFree = noClasses()
+    public static final ArchRule domainLogicIsSideEffectFree = noClasses()
             .that()
             .areAnnotatedWith(DomainPolicy.class)
+            .or()
+            .areAnnotatedWith(DomainService.class)
             .should()
             .dependOnClassesThat()
             .areAnnotatedWith(OutputPort.class)
             .allowEmptyShould(true)
-            .as("domain policies decide, they do not fetch (P-022)")
-            .because("a policy that loads its own inputs cannot be evaluated in a unit test, and its "
+            .as("domain services and policies decide, they do not fetch (P-022)")
+            .because("logic that loads its own inputs cannot be evaluated in a unit test, and its "
                     + "answer depends on when it is asked. Pass the inputs in. "
                     + "See docs/principles/P-022-domain-services-and-policies.md");
 

@@ -3,15 +3,22 @@
 | | |
 |---|---|
 | **Layer** | adapter |
-| **Enforced by** | `ResilienceRules.remoteCallsDeclareTimeouts()`, `ResilienceRules.remoteCallsDeclareTimeouts()`, `ResilienceRules.retriesOnlyOnIdempotentOperations()` (not implemented) in `libs/arch-test` |
+| **Enforced by** | `ResilienceRules.remoteCallsDeclareTimeouts()` in `libs/arch-test` — it checks that the adapter *claims* P-051, not that a timeout is set; the numbers themselves are _review only_. `ResilienceRules.retriesOnlyOnIdempotentOperations()` (not implemented) |
 | **Annotations** | `@OutboundAdapter`, `@ImplementsPrinciple`, `@Adr` |
 | **Guide** | [G-050](../guides/G-050-resilience.md) |
 
 ## Rule
 
-Every `@OutboundAdapter` of kind `HTTP_CLIENT`, `MESSAGING`, `CACHE` or `BLOB_STORAGE`
-declares a connect and read timeout, an explicit retry policy, and a concurrency limit.
-Defaults are not a policy — state the numbers where the adapter is.
+Every `@OutboundAdapter` whose `AdapterKind.isRemote()` declares a connect and read timeout,
+an explicit retry policy, and a concurrency limit. Defaults are not a policy — state the
+numbers where the adapter is.
+
+Which kinds those are is [`AdapterKind`](../../libs/kernel/src/main/java/com/acme/kernel/arch/AdapterKind.java)'s
+own answer rather than a list repeated here, so that adding a technology to the enum forces the
+question rather than quietly escaping this principle. Today: `HTTP_CLIENT`, `MESSAGING`, `CACHE`,
+`BLOB_STORAGE`, `RPC` and `WORKFLOW`. `PERSISTENCE` is excluded on purpose — a database call is
+remote, but its budget is set once by the connection pool and the statement timeout rather than
+per adapter.
 
 ## Why
 

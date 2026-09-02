@@ -153,6 +153,14 @@ public class CachingSupportAutoConfiguration {
             return RedisCacheManager.builder(writer)
                     .cacheDefaults(defaults)
                     .withInitialCacheConfigurations(perCache)
+                    // Without this, RedisCacheManager creates a cache for ANY name asked of it,
+                    // using `defaults` - which carries no entryTtl, so entries never expire. A
+                    // @Cacheable naming a cache no @CacheContract declared would then be served
+                    // from Redis, forever, ignoring both the declared backend and the declared
+                    // TTL, while the composite manager's setFallbackToNoOpCache(false) above
+                    // reported nothing because the Redis delegate had happily answered. The
+                    // undeclared name now fails the call, which is what that comment promises.
+                    .disableCreateOnMissingCache()
                     .build();
         }
 

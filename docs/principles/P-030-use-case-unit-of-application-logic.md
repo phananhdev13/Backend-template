@@ -145,7 +145,14 @@ cyclomatic complexity of 5, or containing a `switch` over a domain enum. Checkst
 deliberately tighter.
 
 `UseCaseRules.useCasesAreTheTransactionBoundary()` fails when `@Transactional` appears on an
-adapter or on a domain class rather than on the use case.
+adapter or on a domain class rather than on the use case — on the class or on any of its
+methods, since the method is where it is usually written.
+
+One adapter is exempt, deliberately: an `@EventHandler` or `@TaskHandler` may open the
+transaction, because the delivery-ledger mark and the use case call have to commit together —
+a rebalance between them loses the work, and a crash between them repeats it
+([P-071](P-071-idempotency.md)). The handler still may not *do* the work; that is
+`AdapterRules.inboundAdaptersOnlyCallInputPorts()`. It brackets, it does not decide.
 
 `TraceabilityRules.everyUseCaseIsDocumented()` resolves `id()` against `docs/use-cases/`
 and fails on a dangling identifier ([P-000](P-000-repository-is-the-only-context.md)).

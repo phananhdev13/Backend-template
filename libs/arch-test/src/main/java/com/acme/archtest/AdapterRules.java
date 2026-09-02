@@ -9,6 +9,7 @@ import com.acme.kernel.arch.OutboundAdapter;
 import com.acme.kernel.arch.OutputPort;
 import com.acme.kernel.arch.ValueObject;
 import com.acme.kernel.event.EventHandler;
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -34,6 +35,23 @@ import java.util.Set;
  */
 public final class AdapterRules {
 
+    /**
+     * Data access this rule must see even though it carries no role.
+     *
+     * <p>The {@code @OutputPort} check alone was not enough, and the gap was exactly the example
+     * in this rule's own {@code because()}: {@code Classes.exemptFromRoleAnnotation} excuses a
+     * {@code *Repository} interface from carrying a role at all, so a Spring Data repository is
+     * not {@code @OutputPort}, has no layer, and was invisible to every layering rule. A
+     * controller could inject one and call {@code deleteById} directly - skipping the use case,
+     * its transaction and its authorisation check - with a green build.
+     */
+    private static final List<String> DATA_ACCESS_TYPES = List.of(
+            "jakarta.persistence.EntityManager",
+            "org.springframework.jdbc.core.JdbcTemplate",
+            "org.springframework.jdbc.core.simple.JdbcClient",
+            "org.springframework.data.repository.Repository",
+            "org.springframework.data.repository.CrudRepository");
+
     @ArchTest
     public static final ArchRule inboundAdaptersOnlyCallInputPorts = noClasses()
             .that()
@@ -41,13 +59,32 @@ public final class AdapterRules {
             .or()
             .areAnnotatedWith(EventHandler.class)
             .should()
-            .dependOnClassesThat()
-            .areAnnotatedWith(OutputPort.class)
+            .dependOnClassesThat(annotatedWithOutputPort().or(dataAccess()))
             .allowEmptyShould(true)
             .as("inbound adapters reach the application only through input ports (P-040)")
             .because("a controller calling a repository skips the use case, and with it the "
                     + "transaction and the authorisation check. "
                     + "See docs/principles/P-040-inbound-adapters-translate.md");
+
+    private static DescribedPredicate<JavaClass> annotatedWithOutputPort() {
+        return new DescribedPredicate<>("an @OutputPort") {
+            @Override
+            public boolean test(JavaClass type) {
+                return Annotations.has(type, OutputPort.class);
+            }
+        };
+    }
+
+    private static DescribedPredicate<JavaClass> dataAccess() {
+        return new DescribedPredicate<>("a repository or a data-access template") {
+            @Override
+            public boolean test(JavaClass type) {
+                return type.getSimpleName().endsWith("Repository")
+                        || DATA_ACCESS_TYPES.contains(type.getFullName())
+                        || DATA_ACCESS_TYPES.stream().anyMatch(type::isAssignableTo);
+            }
+        };
+    }
 
     /**
      * A cyclomatic-complexity threshold on adapter methods, the other half of this rule as P-040

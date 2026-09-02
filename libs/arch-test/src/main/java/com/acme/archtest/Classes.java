@@ -41,6 +41,22 @@ public final class Classes {
         };
     }
 
+    /**
+     * Classes declaring a method annotated with the named annotation.
+     *
+     * <p>Addressed by fully qualified name so a rule can select on a framework annotation -
+     * {@code @Scheduled}, {@code @Transactional} - that {@code libs/arch-test} deliberately does
+     * not put on its own compile classpath.
+     */
+    public static DescribedPredicate<JavaClass> haveAMethodAnnotatedWith(String annotationFullName) {
+        return new DescribedPredicate<>("declaring a method annotated with " + annotationFullName) {
+            @Override
+            public boolean test(JavaClass type) {
+                return type.getMethods().stream().anyMatch(method -> Annotations.hasNamed(method, annotationFullName));
+            }
+        };
+    }
+
     /** Types whose category, rather than their annotation, already fixes their meaning. */
     public static DescribedPredicate<JavaClass> exemptFromRoleAnnotation() {
         return new DescribedPredicate<>("exempt from carrying an architectural role") {

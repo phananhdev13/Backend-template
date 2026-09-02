@@ -1,16 +1,18 @@
 package com.acme.agentfactory.registry.adapter.in.messaging;
 
+import com.acme.agentfactory.registry.application.port.in.RecordActivationAuditCommand;
+import com.acme.agentfactory.registry.application.port.in.RecordActivationAuditUseCase;
+import com.acme.agentfactory.registry.domain.AgentId;
 import com.acme.agentfactory.registry.domain.AgentVersionActivated;
+import com.acme.agentfactory.registry.domain.VersionNumber;
 import com.acme.kernel.arch.AdapterKind;
 import com.acme.kernel.arch.InboundAdapter;
 import com.acme.kernel.event.EventHandler;
 import com.acme.kernel.event.Idempotent;
 import com.acme.messaging.ProcessedMessageStore;
 import java.time.Duration;
-import java.time.ZoneOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,11 +45,11 @@ public class AgentActivationAuditListener {
             + "'${acme.messaging.stream-prefix:}')}";
 
     private final ProcessedMessageStore processed;
-    private final JdbcClient jdbc;
+    private final RecordActivationAuditUseCase recordAudit;
 
-    public AgentActivationAuditListener(ProcessedMessageStore processed, JdbcClient jdbc) {
+    public AgentActivationAuditListener(ProcessedMessageStore processed, RecordActivationAuditUseCase recordAudit) {
         this.processed = processed;
-        this.jdbc = jdbc;
+        this.recordAudit = recordAudit;
     }
 
     // The topic is resolved from the contract rather than hard-coded, so a stream-prefix or
@@ -63,17 +65,8 @@ public class AgentActivationAuditListener {
             log.debug("Activation already audited agentId={} version={}", event.agentId(), event.version());
             return;
         }
-        // pgjdbc has no default SQL type for java.time.Instant - only the offset/local JSR-310
-        // types JDBC 4.2 itself defines - so it is bound as the OffsetDateTime that maps directly
-        // to timestamptz, not the Instant the event itself carries.
-        jdbc.sql("""
-                        insert into agent_activation_audit (agent_id, version_number, activated_at)
-                        values (:agentId, :version, :activatedAt)
-                        """)
-                .param("agentId", event.agentId())
-                .param("version", event.version())
-                .param("activatedAt", event.occurredAt().atOffset(ZoneOffset.UTC))
-                .update();
+        recordAudit.recordActivationAudit(new RecordActivationAuditCommand(
+                new AgentId(event.agentId()), new VersionNumber(event.version()), event.occurredAt()));
         log.info("Audited activation agentId={} version={}", event.agentId(), event.version());
     }
 }

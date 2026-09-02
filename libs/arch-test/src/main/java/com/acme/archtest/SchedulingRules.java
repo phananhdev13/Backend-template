@@ -29,6 +29,26 @@ public final class SchedulingRules {
 
     private static final String QUARTZ_JOB = "org.quartz.Job";
 
+    private static final String SPRING_SCHEDULED = "org.springframework.scheduling.annotation.Scheduled";
+
+    /**
+     * The rule below only inspects classes that already carry
+     * {@code @InboundAdapter(AdapterKind.SCHEDULER)}, which made every guarantee it offers
+     * opt-in: writing {@code @Scheduled} on any other class - a {@code @UseCase}, a plain
+     * {@code @Component} - skipped the cluster-safety check entirely, which is precisely the
+     * "every instance does the job, every time" failure P-132 exists to prevent. This rule is
+     * what makes the marker non-optional, so the one below can rely on it.
+     */
+    @ArchTest
+    public static final ArchRule scheduledMethodsLiveOnASchedulerAdapter = classes()
+            .that(Classes.haveAMethodAnnotatedWith(SPRING_SCHEDULED))
+            .should(declareThemselvesASchedulerAdapter())
+            .allowEmptyShould(true)
+            .as("a @Scheduled method belongs to a declared scheduler adapter (P-132)")
+            .because("the cluster-safety check is targeted at @InboundAdapter(SCHEDULER), so a "
+                    + "@Scheduled method anywhere else is not checked at all. "
+                    + "See docs/principles/P-132-scheduled-jobs.md");
+
     @ArchTest
     public static final ArchRule schedulerAdaptersAreClusterSafe = classes()
             .that()
@@ -41,6 +61,27 @@ public final class SchedulingRules {
                     + "See docs/principles/P-132-scheduled-jobs.md");
 
     private SchedulingRules() {}
+
+    private static ArchCondition<JavaClass> declareThemselvesASchedulerAdapter() {
+        return new ArchCondition<>("be an @InboundAdapter(AdapterKind.SCHEDULER)") {
+            @Override
+            public void check(JavaClass item, ConditionEvents events) {
+                boolean declared = Annotations.find(item, InboundAdapter.class)
+                        .map(a -> Annotations.enumName(a, "value", "").equals(AdapterKind.SCHEDULER.name()))
+                        .orElse(false);
+                if (declared) {
+                    return;
+                }
+                events.add(SimpleConditionEvent.violated(
+                        item,
+                        ("%s has a @Scheduled method but is not an @InboundAdapter(AdapterKind.SCHEDULER). "
+                                        + "A clock tick is an inbound transport like any other; declare it as "
+                                        + "one so the cluster-safety rule can see it, and give it a "
+                                        + "@SchedulerLock.")
+                                .formatted(item.getName())));
+            }
+        };
+    }
 
     private static ArchCondition<JavaClass> beProvablySafeAcrossInstances() {
         return new ArchCondition<>("carry a cross-instance exclusivity mechanism, or an @Adr") {

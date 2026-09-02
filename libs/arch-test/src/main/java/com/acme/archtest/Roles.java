@@ -3,7 +3,10 @@ package com.acme.archtest;
 import com.acme.kernel.arch.ArchRole;
 import com.acme.kernel.arch.Layer;
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -33,10 +36,24 @@ public final class Roles {
 
     /** The role annotation's own type, for example {@code UseCase}, or empty when there is none. */
     public static Optional<JavaClass> roleAnnotationOf(JavaClass type) {
+        return roleAnnotationsOf(type).stream().findFirst();
+    }
+
+    /**
+     * Every role annotation the class carries, ordered by name.
+     *
+     * <p>The ordering is the point. {@code JavaClass.getAnnotations()} returns a {@code Set}, so
+     * taking the first of several was resolving a class with two roles by hash order - a build
+     * whose verdict on {@code rolesMatchTheirPackage} and {@code dependenciesPointInwards} could
+     * differ between JVMs. Sorting makes the choice reproducible;
+     * {@link RoleRules#everyClassDeclaresAtMostOneRole} makes it unnecessary.
+     */
+    public static List<JavaClass> roleAnnotationsOf(JavaClass type) {
         return type.getAnnotations().stream()
-                .map(annotation -> annotation.getRawType())
+                .map(JavaAnnotation::getRawType)
                 .filter(raw -> Annotations.has(raw, ArchRole.class))
-                .findFirst();
+                .sorted(Comparator.comparing(JavaClass::getFullName))
+                .toList();
     }
 
     /** Whether the class declares any architectural role. */

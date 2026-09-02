@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | adapter |
-| **Enforced by** | `SchedulingRules.schedulerAdaptersAreClusterSafe()` in `libs/arch-test` |
+| **Enforced by** | `SchedulingRules.scheduledMethodsLiveOnASchedulerAdapter()`, `SchedulingRules.schedulerAdaptersAreClusterSafe()` in `libs/arch-test` |
 | **Annotations** | `@InboundAdapter(AdapterKind.SCHEDULER)`, `@Adr` |
 | **Guide** | [skill: scheduling](../../.claude/skills/scheduling/SKILL.md) |
 

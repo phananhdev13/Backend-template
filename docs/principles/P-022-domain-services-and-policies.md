@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | domain |
-| **Enforced by** | `DomainRules.domainDependsOnlyOnDomain()`, `DomainRules.policiesAreSideEffectFree()`, `NamingRules.policiesDeclareWhatTheyDecide()` in `libs/arch-test` |
+| **Enforced by** | `DomainRules.domainDependsOnlyOnDomain()`, `DomainRules.domainLogicIsSideEffectFree()`, `NamingRules.policiesDeclareWhatTheyDecide()` in `libs/arch-test`. Mutable state and `void` public methods on a policy are _review only_ |
 | **Annotations** | `@DomainService`, `@DomainPolicy` |
 | **Guide** | [G-020](../guides/G-020-use-case.md) |
 
@@ -125,9 +125,15 @@ DOMAIN may depend only on DOMAIN. Pass the data in as a parameter.
 See docs/principles/P-022-domain-services-and-policies.md
 ```
 
-`DomainRules.policiesAreSideEffectFree()` fails a `@DomainPolicy` with mutable instance
-state or a `void` public method — a policy returns a decision; changing something is
-somebody else's job.
+`DomainRules.domainLogicIsSideEffectFree()` fails a `@DomainPolicy` **or a `@DomainService`**
+that depends on an `@OutputPort` — the "neither may touch a port" half of the rule above. It
+covers both roles deliberately: while it named only `@DomainPolicy`, `@DomainService` was the
+strictly weaker annotation, and a developer who wanted a repository inside domain logic got it
+by choosing the other word.
+
+That a policy also holds no mutable state and returns a decision rather than declaring a `void`
+public method is **review only** — neither is expressible as a bytecode rule without banning
+shapes that are legitimate elsewhere.
 
 `NamingRules.policiesDeclareWhatTheyDecide()` fails a blank `decides`, or one that merely
 repeats the class name.

@@ -17,10 +17,24 @@
       "since": "0.1.0"
     },
     {
+      "code": "agent.activation-not-permitted",
+      "kind": "FORBIDDEN",
+      "status": 403,
+      "meaning": "The caller is authenticated but policy refused the activation. The decision comes from OPA, and a sidecar that cannot be reached denies rather than allows, so this is also what an outage looks like to a client.",
+      "since": "0.1.0"
+    },
+    {
       "code": "agent.name-taken",
       "kind": "CONFLICT",
       "status": 409,
       "meaning": "An agent name is already registered. Names are how humans and dashboards find an agent, so two agents cannot share one.",
+      "since": "0.1.0"
+    },
+    {
+      "code": "agent.not-found",
+      "kind": "NOT_FOUND",
+      "status": 404,
+      "meaning": "No agent with that identifier exists. Built by NotFoundException.of(\"Agent\", id), so the code follows the type name rather than being written at the throw site.",
       "since": "0.1.0"
     },
     {
@@ -42,6 +56,13 @@
       "kind": "BUSINESS_RULE",
       "status": 422,
       "meaning": "An order was submitted with no lines. An empty order is refused, not stored as a draft.",
+      "since": "0.1.0"
+    },
+    {
+      "code": "order.not-found",
+      "kind": "NOT_FOUND",
+      "status": 404,
+      "meaning": "No order with that identifier exists. Built by NotFoundException.of(\"Order\", id), so the code follows the type name rather than being written at the throw site.",
       "since": "0.1.0"
     },
     {
