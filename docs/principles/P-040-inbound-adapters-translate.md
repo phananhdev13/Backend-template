@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Layer** | adapter |
-| **Enforced by** | `AdapterRules.inboundAdaptersOnlyCallInputPorts()`, `AdapterRules.inboundAdaptersContainNoBusinessLogic()` (not implemented), `NamingRules.edgeDataTypesStayInAdapters()` in `libs/arch-test` |
+| **Enforced by** | `AdapterRules.inboundAdaptersOnlyCallInputPorts()`, `AdapterRules.inboundAdaptersContainNoBusinessLogic()`, `NamingRules.edgeDataTypesStayInAdapters()` in `libs/arch-test` |
 | **Annotations** | `@InboundAdapter`, `@InputPort`, `@EventHandler` |
 | **Guide** | [G-070](../guides/G-070-api.md) |
 
@@ -115,8 +115,14 @@ Inbound adapters call @InputPort and @ReadModel only.
 See docs/principles/P-040-inbound-adapters-translate.md
 ```
 
-`AdapterRules.inboundAdaptersContainNoBusinessLogic()` (not implemented) fails an adapter method exceeding a
-cyclomatic complexity of 4, or comparing a `@ValueObject` against a threshold.
+`AdapterRules.inboundAdaptersContainNoBusinessLogic()` fails an `@InboundAdapter` calling
+`compareTo`, `isGreaterThan`, `isLessThan`, `isGreaterThanOrEqualTo` or `isLessThanOrEqualTo` on
+a `@ValueObject` - the exact shape of `request.total().compareTo(customer.creditLimit())` in this
+principle's own "wrong" example, suppressible with `@Adr`. The other half this rule was
+originally specified with - a cyclomatic-complexity threshold on adapter methods - is not
+attempted: ArchUnit's imported model gives dependencies and calls, not a control-flow graph, so
+"count the decision points in this method" is not something its API can answer honestly.
+Checkstyle's own `CyclomaticComplexity` check (12, repo-wide) is the backstop for that half.
 
 `NamingRules.edgeDataTypesStayInAdapters()` fails a controller method whose return type or
 `@RequestBody` parameter is annotated `@AggregateRoot`, `@DomainEntity` or `@ValueObject`.

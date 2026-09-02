@@ -3,13 +3,16 @@ package com.acme.archtest;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
+import com.acme.kernel.arch.Adr;
 import com.acme.kernel.arch.InboundAdapter;
 import com.acme.kernel.arch.OutboundAdapter;
 import com.acme.kernel.arch.OutputPort;
+import com.acme.kernel.arch.ValueObject;
 import com.acme.kernel.event.EventHandler;
 import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
@@ -20,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Adapters translate: P-040, P-041.
@@ -44,6 +48,54 @@ public final class AdapterRules {
             .because("a controller calling a repository skips the use case, and with it the "
                     + "transaction and the authorisation check. "
                     + "See docs/principles/P-040-inbound-adapters-translate.md");
+
+    /**
+     * A cyclomatic-complexity threshold on adapter methods, the other half of this rule as P-040
+     * originally specified it, is deliberately not attempted here: ArchUnit's imported model gives
+     * dependencies and calls, not a control-flow graph, so "count the decision points in this
+     * method" is not something its API answers honestly. Checkstyle's own general-purpose
+     * complexity check is the backstop for that; this narrower, mechanically sound half catches the
+     * concrete failure mode P-040's own "wrong" example shows.
+     */
+    @ArchTest
+    public static final ArchRule inboundAdaptersContainNoBusinessLogic = classes()
+            .that()
+            .areAnnotatedWith(InboundAdapter.class)
+            .should(compareNoValueObjectAgainstAThreshold())
+            .allowEmptyShould(true)
+            .as("inbound adapters compare no value object against a threshold (P-040)")
+            .because("request.total().compareTo(customer.creditLimit()) in a controller is a business "
+                    + "rule reachable only from this one entry point - a Kafka handler or a CSV import "
+                    + "that creates the same kind of order never sees it. "
+                    + "See docs/principles/P-040-inbound-adapters-translate.md");
+
+    private static final Set<String> THRESHOLD_COMPARISON_METHODS =
+            Set.of("compareTo", "isGreaterThan", "isLessThan", "isGreaterThanOrEqualTo", "isLessThanOrEqualTo");
+
+    private static ArchCondition<JavaClass> compareNoValueObjectAgainstAThreshold() {
+        return new ArchCondition<>("compare no @ValueObject against a threshold") {
+            @Override
+            public void check(JavaClass item, ConditionEvents events) {
+                if (Annotations.has(item, Adr.class)) {
+                    return;
+                }
+                for (JavaMethodCall call : item.getMethodCallsFromSelf()) {
+                    JavaClass owner = call.getTargetOwner();
+                    String methodName = call.getTarget().getName();
+                    if (!THRESHOLD_COMPARISON_METHODS.contains(methodName)
+                            || !Annotations.has(owner, ValueObject.class)) {
+                        continue;
+                    }
+                    events.add(SimpleConditionEvent.violated(
+                            item,
+                            ("%s calls %s.%s(...), comparing a value object against a threshold. That "
+                                            + "is a business decision - move it behind the input port so "
+                                            + "every entry point gets it, not only this one.")
+                                    .formatted(item.getName(), owner.getSimpleName(), methodName)));
+                }
+            }
+        };
+    }
 
     @ArchTest
     public static final ArchRule outboundAdaptersImplementTheirDeclaredPort = classes()
