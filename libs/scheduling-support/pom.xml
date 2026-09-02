@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>backend-template</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>scheduling-support</artifactId>
+
+  <name>scheduling-support</name>
+  <description>Distributed cron: two mechanisms behind one rule (P-132), so a
+    @InboundAdapter(SCHEDULER) either carries a real cross-instance exclusivity
+    guarantee or fails the build, rather than doubling up silently on the second
+    running instance. ShedLock (a JDBC lock wrapping a plain @Scheduled method)
+    for lightweight, idempotent maintenance jobs; Quartz's clustered JDBC
+    JobStore for persisted, misfire-aware, calendar-blackout schedules. A service
+    already depending on temporal-support has a third, better option for
+    anything that already is a workflow: Temporal's own native cron schedule -
+    see docs/principles/P-132-scheduled-jobs.md.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>kernel</artifactId>
+    </dependency>
+
+    <!-- ShedLock: a JDBC row lock wrapping a plain @Scheduled method, nothing more. Both
+         optional - a service that only needs Quartz's richer scheduling should not be forced
+         to carry ShedLock's lock table, and vice versa. -->
+    <dependency>
+      <groupId>net.javacrumbs.shedlock</groupId>
+      <artifactId>shedlock-spring</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>net.javacrumbs.shedlock</groupId>
+      <artifactId>shedlock-provider-jdbc-template</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Quartz: Boot's own spring-boot-starter-quartz autoconfigures a Scheduler bean
+         entirely from spring.quartz.* properties - this module supplies the defaults that
+         make that Scheduler clustered rather than in-memory, and the schema Flyway (not
+         Quartz's own schema-initialize-on-startup) owns. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-quartz</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Migrates the bundled db/migration/scheduling scripts against a real Postgres, the same
+         two artifacts persistence-support depends on non-optionally; here only the test needs
+         them, since a real service already carries persistence-support for its own schema. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

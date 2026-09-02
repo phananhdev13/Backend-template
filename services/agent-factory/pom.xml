@@ -41,6 +41,21 @@
       <groupId>com.acme</groupId>
       <artifactId>caching-support</artifactId>
     </dependency>
+    <!-- ShedLock for IdempotencyLedgerHousekeepingJob: purges expired processed_message rows on
+         a schedule, safe to run on every instance because ShedLock lets only one of them
+         actually proceed per tick. -->
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>scheduling-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.javacrumbs.shedlock</groupId>
+      <artifactId>shedlock-spring</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.javacrumbs.shedlock</groupId>
+      <artifactId>shedlock-provider-jdbc-template</artifactId>
+    </dependency>
 
     <!-- The starter brings spring-boot-kafka, the module that actually wires KafkaTemplate,
          ProducerFactory, ConsumerFactory and @KafkaListener processing. spring-kafka alone is

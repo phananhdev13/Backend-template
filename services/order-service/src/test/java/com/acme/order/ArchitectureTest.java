@@ -16,6 +16,7 @@ import com.acme.archtest.PortRules;
 import com.acme.archtest.ReadModelRules;
 import com.acme.archtest.ResilienceRules;
 import com.acme.archtest.RoleRules;
+import com.acme.archtest.SchedulingRules;
 import com.acme.archtest.SecurityRules;
 import com.acme.archtest.TaskContractRules;
 import com.acme.archtest.TraceabilityRules;
@@ -102,4 +103,7 @@ class ArchitectureTest {
 
     @ArchTest
     static final ArchTests taskContracts = ArchTests.in(TaskContractRules.class);
+
+    @ArchTest
+    static final ArchTests scheduling = ArchTests.in(SchedulingRules.class);
 }

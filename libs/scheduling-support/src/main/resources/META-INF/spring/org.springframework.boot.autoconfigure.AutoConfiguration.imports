@@ -1,0 +1,2 @@
+com.acme.scheduling.ShedLockAutoConfiguration
+com.acme.scheduling.QuartzClusteringAutoConfiguration

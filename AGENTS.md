@@ -39,6 +39,7 @@ libs/web-support      RFC 9457 problem responses, one exception translation poin
 libs/persistence-support   auditable entities, optimistic locking, migration layout
 libs/messaging-support     the only module that knows Kafka or RabbitMQ exists
 libs/caching-support       the CacheManager built from @CacheContract - Caffeine and Redis
+libs/scheduling-support    distributed cron: ShedLock and Quartz's clustered JobStore
 libs/grpc-support          internal RPC: gRPC exception translation and correlation propagation
 libs/temporal-support      durable workflows: worker bootstrap, mandatory activity timeouts
 libs/blob-storage-support  S3-compatible object storage: presigned URLs, MinIO-compatible
@@ -78,6 +79,7 @@ Dependencies point inwards: adapter → application → domain. `Layer.mayDepend
 | calling another service | skill `resilience` |
 | caching a query | skill `caching`, [P-130](docs/principles/P-130-caching-contracts.md) |
 | submitting or consuming a background job | skill `task-queues`, [P-131](docs/principles/P-131-task-queues.md) |
+| running a job on a schedule, across more than one instance | skill `scheduling`, [P-132](docs/principles/P-132-scheduled-jobs.md) |
 | calling another service internally via RPC | skill `grpc`, [P-043](docs/principles/P-043-grpc-internal-rpc.md) |
 | a process that must survive a crash or run for hours/days | skill `temporal`, [P-033](docs/principles/P-033-workflow-definitions-are-deterministic.md) |
 | storing or serving a file (upload, export, attachment) | skill `blob-storage`, [P-044](docs/principles/P-044-object-storage-presigned-access.md) |

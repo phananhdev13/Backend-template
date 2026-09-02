@@ -39,6 +39,7 @@ reviewing, because those are the rules that decay without anyone noticing.
 | [P-120](../principles/P-120-security-at-use-case-boundary.md) | Security decisions happen at the use case boundary | `SecurityRules.domainNeverReadsSecurityContext`, `SecurityRules.noAuthorisationInAdapters` | — |
 | [P-130](../principles/P-130-caching-contracts.md) | Caching contracts are declared, not configured | `CacheContractRules.distributedPersonalDataCachesCarryAnAdr`, `CacheContractRules.everyCacheContractPairsWithASpringCacheAnnotation` | `CacheContract` |
 | [P-131](../principles/P-131-task-queues.md) | Task queues are point-to-point, never broadcast | `TaskContractRules.everyTaskDeclaresAContract`, `TaskContractRules.everyTaskHandlerIsIdempotent`, `TaskContractRules.handledTaskDeclaresAContract`, `TaskContractRules.personalDataTasksCarryAnAdr` | `AgentDeploymentProvisioningAdapter` |
+| [P-132](../principles/P-132-scheduled-jobs.md) | A scheduled job is exclusive across instances by construction, never by convention | `SchedulingRules.schedulerAdaptersAreClusterSafe` | — |
 
 ## Not mechanically enforced
 

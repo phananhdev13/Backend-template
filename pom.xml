@@ -26,6 +26,7 @@
     <module>libs/messaging-support</module>
     <module>libs/observability-support</module>
     <module>libs/caching-support</module>
+    <module>libs/scheduling-support</module>
     <module>libs/grpc-support</module>
     <module>libs/temporal-support</module>
     <module>libs/blob-storage-support</module>
@@ -56,6 +57,9 @@
          overrides down to the 1.62.0 Boot already pins - safe, because the
          OpenTelemetry API is additive-only across minor versions. See ADR-0019. -->
     <otel-instrumentation.version>2.31.1</otel-instrumentation.version>
+    <!-- quartz.version is already managed by spring-boot-dependencies (2.5.2); ShedLock is not
+         a Spring project and carries its own release train. -->
+    <shedlock.version>7.9.0</shedlock.version>
 
     <!-- Build plugin versions. -->
     <flatten-maven-plugin.version>1.8.0</flatten-maven-plugin.version>
@@ -122,6 +126,11 @@
       </dependency>
       <dependency>
         <groupId>com.acme</groupId>
+        <artifactId>scheduling-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
         <artifactId>grpc-support</artifactId>
         <version>${revision}</version>
       </dependency>
@@ -177,6 +186,19 @@
         <groupId>io.opentelemetry.instrumentation</groupId>
         <artifactId>opentelemetry-instrumentation-annotations</artifactId>
         <version>${otel-instrumentation.version}</version>
+      </dependency>
+      <!-- @SchedulerLock: managed here, not only inside scheduling-support's own pom, so a
+           service that wants ShedLock (agent-factory's IdempotencyLedgerHousekeepingJob) can
+           depend on it directly without repeating the version. See P-132. -->
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-spring</artifactId>
+        <version>${shedlock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-provider-jdbc-template</artifactId>
+        <version>${shedlock.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

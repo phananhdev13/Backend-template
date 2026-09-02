@@ -11,9 +11,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    # messaging-support ships the processed_message table under its own path; every service that
-    # consumes events adds it alongside its own migrations.
-    locations: classpath:db/migration,classpath:db/migration/messaging
+    # messaging-support and scheduling-support each ship their own tables under their own path,
+    # each reserving a fixed version in the combined sequence (V001 messaging, V002
+    # scheduling-shedlock, V003 scheduling-quartz - unused here, not on the classpath) - which is
+    # why this service's own migrations start at V4, not V2.
+    locations: classpath:db/migration,classpath:db/migration/messaging,classpath:db/migration/scheduling-shedlock
   modulith:
     events:
       jdbc:
