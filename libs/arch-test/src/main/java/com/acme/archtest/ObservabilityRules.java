@@ -4,6 +4,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
+import com.acme.kernel.arch.Adr;
 import com.acme.kernel.arch.UseCase;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.junit.ArchTest;
@@ -58,7 +59,44 @@ public final class ObservabilityRules {
                     + "the service and a database row that changed, and nothing in between. "
                     + "See docs/principles/P-060-observability.md");
 
+    @ArchTest
+    public static final ArchRule useCasesAreObserved = classes()
+            .that()
+            .areAnnotatedWith(UseCase.class)
+            .should(carryTheObservedAnnotation())
+            .allowEmptyShould(true)
+            .as("every use case is metered by its own identifier (P-060)")
+            .because("@Observed is what turns a use case identifier into a queryable metric - latency "
+                    + "and failure rate tagged by UC id rather than by HTTP route, which changes with "
+                    + "the API version the identifier does not. See docs/principles/P-060-observability.md");
+
+    /** Referenced by name: arch-test does not depend on Micrometer. */
+    private static final String MICROMETER_OBSERVED = "io.micrometer.observation.annotation.Observed";
+
     private ObservabilityRules() {}
+
+    private static ArchCondition<JavaClass> carryTheObservedAnnotation() {
+        return new ArchCondition<>("carry @Observed on the method implementing its input port") {
+            @Override
+            public void check(JavaClass item, ConditionEvents events) {
+                if (Annotations.has(item, Adr.class)) {
+                    return;
+                }
+                boolean observed = item.getMethods().stream()
+                        .anyMatch(method -> Annotations.hasNamed(method, MICROMETER_OBSERVED));
+                if (observed) {
+                    return;
+                }
+                events.add(SimpleConditionEvent.violated(
+                        item,
+                        ("%s is a @UseCase with no @Observed method. Add "
+                                        + "@Observed(name = \"usecase.<slug>\", contextualName = \"<UC id>\") to "
+                                        + "the method implementing its @InputPort, or suppress with @Adr if this "
+                                        + "use case is deliberately unmetered.")
+                                .formatted(item.getName())));
+            }
+        };
+    }
 
     private static ArchCondition<JavaClass> declareALogger() {
         return new ArchCondition<>("declare an SLF4J logger") {

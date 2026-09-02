@@ -8,6 +8,9 @@ import com.acme.order.ordering.domain.DiscountPolicy;
 import com.acme.order.ordering.domain.Order;
 import com.acme.order.ordering.domain.OrderId;
 import com.acme.order.ordering.domain.OrderPlaced;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.time.Clock;
 import java.time.Instant;
 import org.slf4j.Logger;
@@ -46,10 +49,23 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         this.clock = clock;
     }
 
+    /**
+     * Two different observability mechanisms, on purpose, per ADR-0019: {@code @Observed} feeds
+     * Micrometer/Actuator - this repository's metrics pipeline, tagged {@code contextualName} so
+     * "p99 by use case" is a query, not a grep. {@code @WithSpan} feeds a trace, but only when this
+     * process is launched with {@code -javaagent:opentelemetry-javaagent.jar}; without the agent it
+     * compiles and runs and creates nothing, silently. Neither annotation can enrich a span with
+     * this use case's own generated id, since {@code @SpanAttribute} only reads a method's incoming
+     * parameters and {@code orderId} does not exist until after {@link Order#place} runs - so it is
+     * added to the already-open span with the plain OpenTelemetry API instead.
+     */
     @Override
+    @Observed(name = "usecase.place-order", contextualName = "UC-ORD-001")
+    @WithSpan("usecase.UC-ORD-001")
     public OrderId placeOrder(PlaceOrderCommand command) {
         Order order = Order.place(OrderId.newId(), command.customerId(), command.lines(), clock);
         orders.save(order);
+        Span.current().setAttribute("orderId", order.id().value().toString());
 
         var total = order.total(discountPolicy);
         events.publishEvent(new OrderPlaced(

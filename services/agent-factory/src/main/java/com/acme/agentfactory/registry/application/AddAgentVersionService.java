@@ -9,6 +9,7 @@ import com.acme.agentfactory.registry.domain.AgentVersion;
 import com.acme.agentfactory.registry.domain.VersionNumber;
 import com.acme.kernel.arch.UseCase;
 import com.acme.kernel.error.NotFoundException;
+import io.micrometer.observation.annotation.Observed;
 import java.time.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ public class AddAgentVersionService implements AddAgentVersionUseCase {
     }
 
     @Override
+    @Observed(name = "usecase.add-agent-version", contextualName = "UC-AGT-002")
     public VersionNumber addAgentVersion(AddAgentVersionCommand command) {
         AgentId id = new AgentId(command.agentId());
         AgentDefinition agent = agents.findById(id).orElseThrow(() -> NotFoundException.of("Agent", id.value()));

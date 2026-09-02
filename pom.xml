@@ -48,6 +48,14 @@
     <archunit.version>1.4.2</archunit.version>
     <springdoc.version>3.1.0</springdoc.version>
     <jspecify.version>1.0.1</jspecify.version>
+    <!-- The OpenTelemetry Java agent's own release, not the opentelemetry-api version
+         spring-boot-dependencies already manages (1.62.0, via its opentelemetry-bom
+         import). This module's release train versions the agent, the annotations
+         and the instrumentation-bom together; the annotations artifact's own POM
+         requests opentelemetry-api 1.65.0, which Maven's dependency management
+         overrides down to the 1.62.0 Boot already pins - safe, because the
+         OpenTelemetry API is additive-only across minor versions. See ADR-0019. -->
+    <otel-instrumentation.version>2.31.1</otel-instrumentation.version>
 
     <!-- Build plugin versions. -->
     <flatten-maven-plugin.version>1.8.0</flatten-maven-plugin.version>
@@ -162,6 +170,13 @@
         <groupId>org.jspecify</groupId>
         <artifactId>jspecify</artifactId>
         <version>${jspecify.version}</version>
+      </dependency>
+      <!-- @WithSpan/@SpanAttribute: real spans only when the process runs under
+           -javaagent:opentelemetry-javaagent.jar (ADR-0019); a no-op without it. -->
+      <dependency>
+        <groupId>io.opentelemetry.instrumentation</groupId>
+        <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+        <version>${otel-instrumentation.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

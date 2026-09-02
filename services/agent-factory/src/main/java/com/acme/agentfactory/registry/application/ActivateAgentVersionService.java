@@ -10,6 +10,7 @@ import com.acme.kernel.arch.UseCase;
 import com.acme.kernel.cache.CacheBackend;
 import com.acme.kernel.cache.CacheContract;
 import com.acme.kernel.error.NotFoundException;
+import io.micrometer.observation.annotation.Observed;
 import java.time.Clock;
 import java.time.Instant;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public class ActivateAgentVersionService implements ActivateAgentVersionUseCase 
     @CacheContract(name = "agents.summary-by-id", backend = CacheBackend.LOCAL, ttlSeconds = 30)
     @CacheEvict(cacheNames = "agents.summary-by-id", key = "#command.agentId()")
     @Override
+    @Observed(name = "usecase.activate-agent-version", contextualName = "UC-AGT-003")
     public void activateVersion(ActivateAgentVersionCommand command) {
         AgentId id = new AgentId(command.agentId());
         AgentDefinition agent = agents.findById(id).orElseThrow(() -> NotFoundException.of("Agent", id.value()));

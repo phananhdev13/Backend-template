@@ -30,9 +30,22 @@ nothing in between.
 
 ## Metrics
 
+`@Observed(name = "usecase.<slug>", contextualName = "<UC id>")` on the method implementing the use
+case's input port — enforced by `ObservabilityRules.useCasesAreObserved`. Needs
+`management.observations.annotations.enabled: true` in the service's `application.yml`, off by
+Boot 4.1's own default; without it the annotation is a real no-op.
+
 Tag by use case identifier and outcome. Never tag by anything unbounded — a customer or order id as
 a tag creates one time series per value and will take the metrics backend down before it tells you
 anything.
+
+## Tracing
+
+`@WithSpan("usecase.<ID>")` from `opentelemetry-instrumentation-annotations`. Produces a real span
+only when the process runs under `-javaagent:opentelemetry-javaagent.jar` — a silent no-op under
+`mvn test`, always. The agent auto-populates the MDC with `trace_id`/`span_id` while a span is
+active, which is what joins a log line to a trace; no code change needed beyond attaching the
+agent. Sampling is deployment configuration (`OTEL_TRACES_SAMPLER`), never code.
 
 ## Health
 

@@ -8,6 +8,7 @@ import com.acme.agentfactory.registry.domain.AgentId;
 import com.acme.agentfactory.registry.domain.AgentName;
 import com.acme.kernel.arch.UseCase;
 import com.acme.kernel.error.ConflictException;
+import io.micrometer.observation.annotation.Observed;
 import java.time.Clock;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class RegisterAgentService implements RegisterAgentUseCase {
     }
 
     @Override
+    @Observed(name = "usecase.register-agent", contextualName = "UC-AGT-001")
     public AgentId registerAgent(RegisterAgentCommand command) {
         if (agents.existsByName(command.name())) {
             throw new ConflictException(

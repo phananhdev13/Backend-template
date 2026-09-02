@@ -62,6 +62,13 @@ management:
       probes:
         enabled: true
       show-details: when-authorized
+  observations:
+    annotations:
+      # Off by default in Boot 4.1 - every @Observed method gets AOP-proxied, a cost not every
+      # application wants paid unconditionally. This one does: P-060 requires metrics tagged by
+      # use case identifier, and @Observed is how that tag is attached without a hand-written
+      # Timer in every use case. See docs/principles/P-060-observability.md.
+      enabled: true
 
 logging:
   level:

@@ -33,6 +33,29 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
+    <!-- Boot's own ObservationAutoConfiguration.ObservedAspectConfiguration registers
+         @Observed's ObservedAspect once management.observations.annotations.enabled=true
+         is set (see application.yml) - but that ObservedAspect is an @Aspect class
+         compiled with ajc, and needs the AspectJ weaver on the runtime classpath to be
+         understood as an aspect by Spring's proxy-based auto-proxy creator, even though
+         no load-time or compile-time weaving happens - Spring builds a JDK/CGLIB proxy,
+         same as @Transactional. Boot 4 renamed this starter from -aop; see AGENTS.md. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aspectj</artifactId>
+    </dependency>
+    <!-- @WithSpan/@SpanAttribute compile against this unconditionally; ADR-0019
+         is explicit that the annotation is a real no-op without the OpenTelemetry
+         Java agent attached at `-javaagent:`, so this cannot be optional the way a
+         library a service might not need would be - a service either uses the
+         annotation and needs it on the compile classpath, or does not import it at
+         all. Kept out of springdoc's shape (optional dependencies elsewhere in this
+         repo gate an integration a consumer may not want); this one gates nothing -
+         it is inert without the agent regardless of whether it is present. -->
+    <dependency>
+      <groupId>io.opentelemetry.instrumentation</groupId>
+      <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+    </dependency>
     <!-- The correlation filter is a servlet filter. spring-web and the Servlet API
          are needed to compile it; a non-web service still gets the rest of the module. -->
     <dependency>
