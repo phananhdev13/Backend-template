@@ -10,14 +10,18 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.LettuceClientConfigurationBuilderCustomizer;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.cache.support.CompositeCacheManager;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
@@ -100,9 +104,50 @@ public class CachingSupportAutoConfiguration {
         }
     }
 
+    /**
+     * What a cache outage costs, decided once here rather than per service.
+     *
+     * <p>This is what lets P-130's {@code @Cacheable}-on-a-use-case shape coexist with P-051: the
+     * remote call is still a remote call, but its timeout and its failure behaviour are supplied by
+     * this module instead of by every caller. A service that wants the call to be an explicit
+     * dependency instead writes an {@code @OutboundAdapter(kind = CACHE)} and gets P-051's own rule;
+     * both shapes are legitimate, and neither leaves the budget unstated.
+     *
+     * <p>{@code @ConditionalOnMissingBean} on the interface, not this method: Spring permits exactly
+     * one {@link CachingConfigurer}, so a service that declares its own must win rather than clash.
+     */
+    @Bean
+    @ConditionalOnMissingBean(CachingConfigurer.class)
+    CachingConfigurer cachingResilience() {
+        return new CachingConfigurer() {
+            @Override
+            public CacheErrorHandler errorHandler() {
+                return new DegradingCacheErrorHandler();
+            }
+        };
+    }
+
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(RedisConnectionFactory.class)
     static class DistributedCacheConfiguration {
+
+        /**
+         * Bounds the wait, which is what makes degrading safe rather than merely quiet.
+         *
+         * <p>Applied only when the service left {@code spring.data.redis.timeout} unset, so an
+         * explicit choice always wins. Without it Lettuce waits its own default of 60 seconds, and
+         * {@link DegradingCacheErrorHandler} would turn a hung Redis into a minute of held threads
+         * before deciding to carry on - technically available, practically an outage.
+         */
+        @Bean
+        LettuceClientConfigurationBuilderCustomizer cachingCommandTimeout(
+                CachingProperties properties, Environment environment) {
+            return builder -> {
+                if (!environment.containsProperty("spring.data.redis.timeout")) {
+                    builder.commandTimeout(properties.getCommandTimeout());
+                }
+            };
+        }
 
         /**
          * Falls back to a plain mapper only if the service declared none of its own.

@@ -129,7 +129,10 @@ catches `@Internal` types escaping through a public signature.
 
 A port whose implementation is genuinely two technologies — a repository with a read-through
 cache — is one adapter with `kind = PERSISTENCE` that composes a cache collaborator, not two
-adapters for one port. Note the composition with `@Adr`, because the caching semantics
+adapters for one port. `PERSISTENCE` is not remote for `ResilienceRules`, so that adapter's cache
+hop is not checked there; its timeout and failure policy come from `caching-support`
+([ADR-0022](../adr/0022-distributed-caches-are-bounded-by-the-module-not-the-caller.md)).
+Note the composition with `@Adr`, because the caching semantics
 (invalidation, staleness) are a decision, not an implementation detail.
 
 Where a port must be satisfied differently per tenant or per region, keep one adapter per

@@ -20,6 +20,12 @@ question rather than quietly escaping this principle. Today: `HTTP_CLIENT`, `MES
 remote, but its budget is set once by the connection pool and the statement timeout rather than
 per adapter.
 
+`CACHE` deserves a note. A distributed cache reached through `@Cacheable` on a use case has no
+adapter for this rule to inspect, and that is allowed: `caching-support` supplies the timeout and
+the failure behaviour for that shape, so the budget is stated once in the module rather than at
+every call site. See [P-130](P-130-caching-contracts.md) for the two shapes and what each owes.
+This rule still governs a cache reached through an `@OutboundAdapter(kind = CACHE)`.
+
 ## Why
 
 **Missing timeouts are how one slow dependency stops a whole service.** The default read
