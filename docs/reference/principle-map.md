@@ -34,6 +34,8 @@ reviewing, because those are the rules that decay without anyone noticing.
 | [P-090](../principles/P-090-layered-tests.md) | Tests are layered to match the architecture | _review only_ | — |
 | [P-100](../principles/P-100-vertical-slice-modules.md) | Feature modules are vertical slices with sealed internals | `AdapterRules.adaptersDoNotDependOnOtherAdapters`, `BoundaryRules.crossModuleTypesArePublicApi`, `BoundaryRules.internalTypesStayInTheirModule`, `BoundaryRules.noCyclesBetweenModules` | — |
 | [P-110](../principles/P-110-expand-migrate-contract.md) | Schema changes are expand-migrate-contract | `tools/check-migrations.sh` | — |
+| [P-111](../principles/P-111-relational-schema-states-invariants.md) | The relational schema states the aggregate's invariants explicitly | _review only_ | — |
+| [P-112](../principles/P-112-time-series-hypertables.md) | Time-series data lives in a hypertable with a stated retention policy | `tools/check-migrations.sh` | — |
 | [P-120](../principles/P-120-security-at-use-case-boundary.md) | Security decisions happen at the use case boundary | `SecurityRules.domainNeverReadsSecurityContext`, `SecurityRules.noAuthorisationInAdapters` | — |
 | [P-130](../principles/P-130-caching-contracts.md) | Caching contracts are declared, not configured | `CacheContractRules.distributedPersonalDataCachesCarryAnAdr`, `CacheContractRules.everyCacheContractPairsWithASpringCacheAnnotation` | `CacheContract` |
 | [P-131](../principles/P-131-task-queues.md) | Task queues are point-to-point, never broadcast | `TaskContractRules.everyTaskDeclaresAContract`, `TaskContractRules.everyTaskHandlerIsIdempotent`, `TaskContractRules.handledTaskDeclaresAContract`, `TaskContractRules.personalDataTasksCarryAnAdr` | `AgentDeploymentProvisioningAdapter` |
@@ -48,3 +50,4 @@ way to check one.
 - P-042 Event handlers are adapters with a delivery contract
 - P-043 gRPC is for internal service-to-service RPC, translated at one boundary
 - P-090 Tests are layered to match the architecture
+- P-111 The relational schema states the aggregate's invariants explicitly

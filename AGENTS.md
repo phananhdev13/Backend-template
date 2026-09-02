@@ -73,6 +73,8 @@ Dependencies point inwards: adapter → application → domain. `Layer.mayDepend
 | publishing or consuming an event | skill `events`, [P-070](docs/principles/P-070-event-semantics.md) |
 | adding a new service | skill `new-service` |
 | touching persistence or a migration | skill `persistence` |
+| designing a table's keys, indexes or constraints | skill `persistence`, [P-111](docs/principles/P-111-relational-schema-states-invariants.md) |
+| storing or querying time-series data (a metric, a sensor reading, an audit trail) | skill `persistence`, [P-112](docs/principles/P-112-time-series-hypertables.md) |
 | calling another service | skill `resilience` |
 | caching a query | skill `caching`, [P-130](docs/principles/P-130-caching-contracts.md) |
 | submitting or consuming a background job | skill `task-queues`, [P-131](docs/principles/P-131-task-queues.md) |

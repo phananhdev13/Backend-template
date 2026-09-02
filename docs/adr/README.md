@@ -27,6 +27,7 @@ An ADR is never edited to change its decision. It is superseded by a new one, an
 | [0015](0015-spring-boot-native-grpc-for-internal-rpc.md) | Spring Boot 4.1's native gRPC starters for internal service-to-service RPC | Accepted | 2026-09-01 | — |
 | [0016](0016-temporal-sdk-direct-not-the-spring-starter.md) | Plain temporal-sdk, not temporal-spring-boot-starter, for durable workflows | Accepted | 2026-09-01 | — |
 | [0017](0017-aws-sdk-v2-direct-minio-compatible.md) | Plain AWS SDK v2, not Spring Cloud AWS, wired for MinIO compatibility | Accepted | 2026-09-01 | — |
+| [0018](0018-timescaledb-extension-for-time-series-data.md) | TimescaleDB as a Postgres extension, not a separate time-series database | Accepted | 2026-09-02 | — |
 
 Statuses are `Proposed`, `Accepted`, `Superseded` or `Rejected`. A rejected ADR stays in the
 index: the fact that an option was considered and refused is the part worth keeping.

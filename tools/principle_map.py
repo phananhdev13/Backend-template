@@ -22,6 +22,7 @@ SCRIPT_ENFORCED = {
     "P-050": ["tools/check-error-codes.sh"],
     "P-080": ["tools/check-error-codes.sh"],
     "P-110": ["tools/check-migrations.sh"],
+    "P-112": ["tools/check-migrations.sh"],
 }
 
 PRINCIPLE_ID = re.compile(r"^(P-\d{3})-(.+)\.md$")

@@ -1,7 +1,7 @@
 """Flyway migration rules that live in files rather than in bytecode.
 
-ArchUnit reads compiled classes, so it cannot see a migration at all. These three checks are the
-part of P-110 that a machine can still hold you to.
+ArchUnit reads compiled classes, so it cannot see a migration at all. These checks are the part
+of P-110 and P-112 that a machine can still hold you to.
 """
 
 import os
@@ -15,6 +15,9 @@ DESTRUCTIVE = re.compile(
     r"alter\s+column\s+\S+\s+set\s+not\s+null)\b",
     re.IGNORECASE,
 )
+HYPERTABLE = re.compile(r"create_hypertable\s*\(|timescaledb\.hypertable\b", re.IGNORECASE)
+RETENTION_POLICY = re.compile(r"add_retention_policy\s*\(", re.IGNORECASE)
+RETENTION_OPT_OUT = re.compile(r"--\s*retention:", re.IGNORECASE)
 
 
 def migration_files() -> list[str]:
@@ -33,6 +36,37 @@ def merge_base() -> str | None:
         if result.returncode == 0:
             return base
     return None
+
+
+def hypertables_without_a_retention_policy(files: list[str]) -> list[str]:
+    # Grouped by directory, not by file: expand-migrate-contract means the hypertable and its
+    # retention policy are often legitimately in separate migrations of the same service.
+    by_directory: dict[str, list[str]] = {}
+    for path in files:
+        by_directory.setdefault(os.path.dirname(path), []).append(path)
+
+    problems: list[str] = []
+    for paths in by_directory.values():
+        combined = ""
+        first_match_path: str | None = None
+        first_match_line: int | None = None
+        for path in sorted(paths):
+            text = open(path, encoding="utf-8").read()
+            combined += text
+            if first_match_path is None:
+                match = HYPERTABLE.search(text)
+                if match:
+                    first_match_path = path
+                    first_match_line = text[: match.start()].count("\n") + 1
+        if first_match_path and not (RETENTION_POLICY.search(combined) or RETENTION_OPT_OUT.search(combined)):
+            problems.append(
+                f"{first_match_path}:{first_match_line}: creates a hypertable with no "
+                "add_retention_policy anywhere in this service's migrations, and no '-- retention:' "
+                "comment recording a deliberate decision to keep it unbounded. A hypertable with no "
+                "stated retention grows forever by default. "
+                "See docs/principles/P-112-time-series-hypertables.md"
+            )
+    return problems
 
 
 def main() -> int:
@@ -75,6 +109,8 @@ def main() -> int:
                 "running when a migration lands. Split into expand, migrate and contract, and name "
                 "the final one *_contract_*.sql."
             )
+
+    problems.extend(hypertables_without_a_retention_policy(files))
 
     for entry in problems:
         print(f"MIGRATION  {entry}")

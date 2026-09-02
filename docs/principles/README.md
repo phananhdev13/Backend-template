@@ -37,6 +37,8 @@ thing you have not added before. Read the linked guide when you need the steps.
 | [P-090](P-090-layered-tests.md) | Tests are layered to match the architecture | cross-cutting | `checkstyle:IllegalImport` | [G-080](../guides/G-080-testing.md) |
 | [P-100](P-100-vertical-slice-modules.md) | Feature modules are vertical slices with sealed internals | cross-cutting | `BoundaryRules.internalTypesStayInTheirModule()` | [G-010](../guides/G-010-new-service.md) |
 | [P-110](P-110-expand-migrate-contract.md) | Schema changes are expand-migrate-contract | adapter | `tools/check-migrations.sh` | [G-040](../guides/G-040-persistence.md) |
+| [P-111](P-111-relational-schema-states-invariants.md) | The relational schema states the aggregate's invariants explicitly | adapter | _review only_ | [persistence](../../.claude/skills/persistence/SKILL.md) |
+| [P-112](P-112-time-series-hypertables.md) | Time-series data lives in a hypertable with a stated retention policy | adapter | `tools/check-migrations.sh` | [persistence](../../.claude/skills/persistence/SKILL.md) |
 | [P-120](P-120-security-at-use-case-boundary.md) | Security decisions happen at the use case boundary | application | `SecurityRules.noAuthorisationInAdapters()` | [G-020](../guides/G-020-use-case.md) |
 | [P-130](P-130-caching-contracts.md) | Caching contracts are declared, not configured | application | `CacheContractRules.everyCacheContractPairsWithASpringCacheAnnotation()` | [caching](../../.claude/skills/caching/SKILL.md) |
 | [P-131](P-131-task-queues.md) | Task queues are point-to-point, never broadcast | domain | `TaskContractRules.everyTaskHandlerIsIdempotent()` | [task-queues](../../.claude/skills/task-queues/SKILL.md) |

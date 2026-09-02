@@ -27,3 +27,4 @@ application-local.properties
 build/reports/
 **/generated-sources/
 **/generated-test-sources/
+tools/__pycache__/
